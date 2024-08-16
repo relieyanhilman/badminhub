@@ -1,0 +1,9 @@
+file detail user dan persona dan storyboard dapat diakses melalui link berikut
+
+https://docs.google.com/document/d/1RrBbAmlutDqjG2jdKLpMSPqjYrhBRsAwWA_0ph3Xk9I/edit?usp=sharing
+
+added
+
+29/07/24
+- Tiga user persona (as manager, passionate player, dan transaction detail-oriented person)
+- Storyboard dengan total 4 skenario dari persona tersebut
