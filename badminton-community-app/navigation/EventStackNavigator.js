@@ -1,72 +1,50 @@
 // navigation/EventTabsNavigator.js
 import React from 'react';
-import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
-import EventListScreen from '../screens/EventListScreen';
-import PlayerListScreen from '../screens/PlayerListScreen';
-import MatchListScreen from '../screens/MatchListScreen';
+import { createStackNavigator } from '@react-navigation/stack';
+import EventListScreen from '../screens/Event/EventListScreen';
+import AddEventScreen from '../screens/Event/AddEventScreen';
+import EditEventScreen from '../screens/Event/EditEventScreen';
+import {EventDetailNavigator} from './EventDetailNavigator';
+import EventDayListScreen from '../screens/EventDay/EventDayListScreen';
+import AddEventDayScreen from '../screens/EventDay/AddEventDayScreen';
 
-const Tab = createMaterialTopTabNavigator();
+const Stack = createStackNavigator();
 
-const EventTabsNavigator = () => {
+const EventStackNavigator = () => {
   return (
-    <Tab.Navigator>
-      <Tab.Screen
+    <Stack.Navigator>
+      <Stack.Screen
         name="EventList"
         component={EventListScreen}
         options={{ title: 'Event List' }}
       />
-      <Tab.Screen
-        name="PlayerList"
-        component={PlayerListScreen}
-        options={{ title: 'Player List' }}
+      <Stack.Screen
+        name="EventDayList"
+        component={EventDayListScreen}
+        options={{ title: 'Event Days' }}
       />
-      <Tab.Screen
-        name="MatchList"
-        component={MatchListScreen}
-        options={{ title: 'Match List' }}
+      <Stack.Screen
+        name="AddEventDay"
+        component={AddEventDayScreen}
+        options={{ title: 'Add Event Day' }}
       />
-    </Tab.Navigator>
+      <Stack.Screen
+        name="EventDetail"
+        component={EventDetailNavigator}
+        options={{ title: 'Event Detail' }}
+      />
+      <Stack.Screen
+        name="AddEvent"
+        component={AddEventScreen}
+        options={{ title: 'Add Event' }}
+      />
+      <Stack.Screen
+        name="EditEvent"
+        component={EditEventScreen}
+        options={{ title: 'Edit Event' }}
+      />
+    </Stack.Navigator>
   );
 };
 
-//const EventStackScreen = () => (
-//  <Stack.Navigator>
-//    <Stack.Screen
-//      name="EventList"
-//      component={EventListScreen}
-//      options={{ title: 'Event List' }}
-//    />
-//    <Stack.Screen
-//      name="AddEvent"
-//      component={AddEventScreen}
-//      options={{ title: 'Add New Event' }}
-//    />
-//    <Stack.Screen
-//      name="EditEvent"
-//      component={EditEventScreen}
-//      options={{ title: 'Edit Event' }}
-//    />
-//    <Stack.Screen
-//      name="Matches"
-//      component={MatchListScreen}
-//      options={{ title: 'Match List' }}
-//    />
-//    <Stack.Screen
-//      name="Players"
-//      component={PlayerListScreen}
-//      options={{ title: 'Player List' }}
-//    />
-//    <Stack.Screen
-//      name="AddMatch"
-//      component={AddMatchScreen}
-//      options={{ title: 'Add New Match' }}
-//    />
-//    <Stack.Screen
-//      name="AddPlayer"
-//      component={AddPlayerScreen}
-//      options={{ title: 'Add New Player' }}
-//    />
-//  </Stack.Navigator>
-//);
-
-export default EventTabsNavigator;
+export default EventStackNavigator;

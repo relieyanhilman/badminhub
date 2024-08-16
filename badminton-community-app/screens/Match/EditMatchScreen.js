@@ -1,4 +1,4 @@
-// screens/EditMatchScreen.js
+// Match/EditMatchScreen.js
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, ScrollView } from 'react-native';
 

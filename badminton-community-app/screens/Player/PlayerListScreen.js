@@ -1,4 +1,4 @@
-// screens/PlayerListScreen.js
+// Player/PlayerListScreen.js
 import React, {useState, useEffect} from 'react';
 import { View, Text, FlatList, Button, StyleSheet, Alert } from 'react-native';
 

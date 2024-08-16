@@ -1,4 +1,4 @@
-// screens/AddPlayerScreen.js
+// Player/AddPlayerScreen.js
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
 
