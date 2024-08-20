@@ -20,7 +20,7 @@ const PlayerStackNavigator = ({route}) => {
       <Stack.Screen
         name="AddPlayer"
         component={AddPlayerScreen}
-        options={{ title: 'Add Player' }}
+        options={{ title: 'Create Player' }}
       />
       <Stack.Screen
         name="EditPlayer"

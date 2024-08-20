@@ -375,7 +375,7 @@ const styles = StyleSheet.create({
     height: 50,
     marginBottom: 12,
     backgroundColor: '#fff',
-  }
+  },
 });
 
 export default AddEventScreen;
