@@ -1,6 +1,7 @@
 //Player/PlayerListScreen
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, FlatList, Button, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, Modal, TextInput } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { Picker } from '@react-native-picker/picker';
 import * as SecureStore from 'expo-secure-store';
 
@@ -32,12 +33,19 @@ const PlayerListScreen = ({ navigation, route }) => {
     fetchPlayers();
   }, []);
 
+  useFocusEffect(
+    useCallback(() => {
+      if (route.params?.refresh) {
+        fetchPlayers();
+        // menghapus refresh param setelah fetching
+        navigation.setParams({ refresh: false });
+      }
+      route.params.refresh
+    }, [route.params?.refresh])
+  );
+
   useEffect(() => {
-      if (searchQuery.trim() === '') {
-            setFilteredPlayers([...players, ...masterPlayers]); // Set filteredPlayers ke semua data saat searchQuery kosong
-          } else {
-            applyFiltersAndSearch(); // Apply search jika ada query
-          }
+     applyFiltersAndSearch();
   }, [searchQuery, players, masterPlayers]);
 
   const fetchPlayers = async (isRefreshing = false) => {
@@ -232,26 +240,6 @@ const PlayerListScreen = ({ navigation, route }) => {
     navigation.navigate('AddPlayer');
   };
 
-  const handleDeletePlayer = (playerId) => {
-    Alert.alert(
-      "Delete Player",
-      "Are you sure you want to delete this player?",
-      [
-        {
-          text: "Cancel",
-          style: "cancel"
-        },
-        {
-          text: "Delete",
-          onPress: () => {
-            setPlayers((prevPlayers) => prevPlayers.filter((player) => player.id !== playerId));
-          },
-          style: "destructive"
-        }
-      ]
-    );
-  };
-
   const toggleExpand = (playerId) => {
     setExpandedPlayerIds(prevState =>
       prevState.includes(playerId)
@@ -312,7 +300,6 @@ const PlayerListScreen = ({ navigation, route }) => {
           ) : (
             <>
               <Button title="Edit" onPress={() => navigation.navigate('EditPlayer', { player: item })} />
-              <Button title="Delete" onPress={() => handleDeletePlayer(item.id)} color="red" />
             </>
           )}
         </View>
@@ -433,6 +420,14 @@ const PlayerListScreen = ({ navigation, route }) => {
         </View>
       </Modal>
 
+      {/* Tombol CREATE PLAYER */}
+      <TouchableOpacity
+        style={styles.createButton}
+        onPress={() => navigation.navigate('AddPlayer', { dayId })}
+      >
+        <Text style={styles.buttonText}>CREATE PLAYER</Text>
+      </TouchableOpacity>
+
       <FlatList
         data={filteredPlayers}
         renderItem={renderItem}
@@ -537,6 +532,13 @@ const styles = StyleSheet.create({
   itemButtons: {
     flexDirection: 'row',
     justifyContent: 'center',
+  },
+  createButton: {
+    marginBottom: 10,
+    backgroundColor: '#007BFF',
+    padding: 10,
+    borderRadius: 5,
+    alignItems: 'center',
   },
   buttonText: {
     color: '#fff',
