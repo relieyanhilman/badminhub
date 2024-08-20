@@ -8,14 +8,14 @@ import EditPlayerScreen from '../screens/Player/EditPlayerScreen';
 const Stack = createStackNavigator();
 
 const PlayerStackNavigator = ({route}) => {
-  const {eventId} = route.params;
+  const {dayId} = route.params;
   return (
     <Stack.Navigator>
       <Stack.Screen
         name="PlayerList"
         component={PlayerListScreen}
         options={{ title: 'Player List', headerShown: false  }}
-        initialParams={{ eventId }} // Mengirimkan eventId sebagai param ke PlayerListScreen
+        initialParams={{ dayId }} // Mengirimkan eventId sebagai param ke PlayerListScreen
       />
       <Stack.Screen
         name="AddPlayer"

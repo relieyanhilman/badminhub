@@ -12,7 +12,6 @@ const EditEventScreen = ({ route, navigation }) => {
     name: event.name,
     hall_id: event.hall_id.toString(),
     day: event.day,
-    time: event.time,
     court_count_used: event.court_count_used.toString(),
     max_slot: event.max_slot.toString(),
     htm_member: event.htm_member.toString(),
@@ -20,13 +19,17 @@ const EditEventScreen = ({ route, navigation }) => {
   });
 
   const courtCountUsedRef = useRef()
+  const endTimeUsedRef = useRef()
 
   const [loading, setLoading] = useState(false);
-  const [timePickerVisible, setTimePickerVisible] = useState(false);
+  const [timePickerVisible, setTimePickerVisible] = useState({ visible: false, field: '' });
   const [halls, setHalls] = useState([]);
   const [page, setPage] = useState(1);
   const [allHallsFetched, setAllHallsFetched] = useState(false);
   const [loadingHalls, setLoadingHalls] = useState(false);
+
+  const [start_time, setStartTime] = useState((event.time).split("-")[0]); // State sementara untuk start_time
+  const [end_time, setEndTime] = useState((event.time).split("-")[1]); // State sementara untuk end_time
 
   const handleInputChange = (field, value) => {
     setEventData({ ...eventData, [field]: value });
@@ -43,13 +46,20 @@ const EditEventScreen = ({ route, navigation }) => {
       hours = hours ? hours : 12;
       const minutesStr = minutes < 10 ? `0${minutes}` : minutes;
 
-      setEventData({ ...eventData, time: `${hours}:${minutesStr} ${ampm}` });
-      courtCountUsedRef.current.focus(); // Fokus ke input berikutnya
+      const formattedTime = `${hours}:${minutesStr} ${ampm}`;
+
+      if (timePickerVisible.field === 'start_time') {
+        setStartTime(formattedTime);
+        endTimeUsedRef.current.focus()
+      } else if (timePickerVisible.field === 'end_time') {
+        setEndTime(formattedTime);
+        courtCountUsedRef.current.focus(); // Fokus ke input berikutnya
+      }
     }
   };
 
-  const showTimePicker = () => {
-    setTimePickerVisible(true);
+  const showTimePicker = (field) => {
+    setTimePickerVisible({visible: true, field});
   };
 
   const fetchHalls = async (pageNumber = 1, reset = false) => {
@@ -108,7 +118,8 @@ const EditEventScreen = ({ route, navigation }) => {
       !eventData.name.trim() ||
       !eventData.hall_id.trim() ||
       !eventData.day.trim() ||
-      !eventData.time.trim() ||
+      !start_time.trim() ||
+      !end_time.trim() ||
       !eventData.court_count_used.trim() ||
       !eventData.max_slot.trim() ||
       !eventData.htm_member.trim() ||
@@ -121,6 +132,10 @@ const EditEventScreen = ({ route, navigation }) => {
     setLoading(true);
 
     try {
+      // Gabungkan start_time dan end_time menjadi satu string untuk atribut time
+      const combinedTime = `${start_time}-${end_time}`;
+      setEventData({ ...eventData, time: combinedTime });
+
       const token = await SecureStore.getItemAsync('userToken');
       if (!token) {
         throw new Error('User token not found');
@@ -137,7 +152,7 @@ const EditEventScreen = ({ route, navigation }) => {
           name: eventData.name,
           hall_id: parseInt(eventData.hall_id),
           day: eventData.day,
-          time: eventData.time,
+          time: combinedTime,
           court_count_used: parseInt(eventData.court_count_used),
           max_slot: parseInt(eventData.max_slot),
           htm_member: parseFloat(eventData.htm_member),
@@ -233,14 +248,24 @@ const EditEventScreen = ({ route, navigation }) => {
           <Picker.Item label="Saturday" value="sat" />
         </Picker>
 
-        <Text style={styles.label}>Waktu Bermain</Text>
+        <Text style={styles.label}>Waktu Mulai</Text>
         <TextInput
-          placeholder="Waktu Bermain"
-          value={eventData.time}
-          onFocus={showTimePicker}
+          placeholder="Waktu Mulai"
+          value={start_time}
+          onFocus={() => showTimePicker('start_time')}
           style={styles.input}
         />
-        {timePickerVisible && (
+
+        <Text style={styles.label}>Waktu Selesai</Text>
+        <TextInput
+          placeholder="Waktu Selesai"
+          value={end_time}
+          onFocus={() => showTimePicker('end_time')}
+          style={styles.input}
+          ref= {endTimeUsedRef}
+        />
+
+        {timePickerVisible.visible && (
           <DateTimePicker
             value={new Date()}
             mode="time"

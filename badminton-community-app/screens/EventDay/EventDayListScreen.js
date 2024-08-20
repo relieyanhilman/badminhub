@@ -6,8 +6,7 @@ import { EventContext } from '../../EventContext';
 import * as SecureStore from 'expo-secure-store';
 
 const EventDayListScreen = ({ navigation, route }) => {
-  const { eventId} = route.params;
-  const {eventName} = useContext(EventContext)
+  const {eventId, eventName} = useContext(EventContext)
   const [eventDays, setEventDays] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -66,17 +65,23 @@ const EventDayListScreen = ({ navigation, route }) => {
     }, [route.params?.refresh])
   );
 
-  const handleEventDayPress = (dayId) => {
-    navigation.navigate('EventDetail', { eventId, dayId });
+  const handleEventDayPress = (item) => {
+    navigation.navigate('EventDetail', { dayId: item.id, eventDayName: formatDate(item.date) });
+  };
+
+  const handleEditPress = (day) => {
+    navigation.navigate('EditEventDay', { eventId, day });
   };
 
   const renderItem = ({ item }) => (
-    <TouchableOpacity onPress={() => handleEventDayPress(item.id)}>
-      <View style={styles.item}>
+    <View style={styles.itemContainer}>
+     <TouchableOpacity onPress={() => handleEventDayPress(item)}>
         <Text style={styles.text}>Date: {formatDate(item.date)}</Text>
         <Text style={styles.text}>Note: {item.note}</Text>
-      </View>
-    </TouchableOpacity>
+     </TouchableOpacity>
+     <Button title="Edit" onPress={() => handleEditPress(item)} />
+    </View>
+
   );
 
   if (loading) {
@@ -137,9 +142,12 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#333',
   },
-  item: {
-    padding: 16,
+  itemContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     backgroundColor: '#fff',
+    padding: 16,
     borderRadius: 8,
     marginBottom: 16,
     shadowColor: '#000',
