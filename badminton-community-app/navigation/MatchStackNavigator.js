@@ -9,14 +9,14 @@ import EditMatchScreen from '../screens/Match/EditMatchScreen';
 const Stack = createStackNavigator();
 
 const MatchStackNavigator = ({route}) => {
-  const {eventId} = route.params;
+  const {dayId} = route.params;
   return (
     <Stack.Navigator>
       <Stack.Screen
         name="MatchList"
         component={MatchListScreen}
         options={{ title: 'Match List', headerShown: false }} // Menyembunyikan header Stack.Navigator
-        initialParams={{ eventId }}
+        initialParams={{ dayId }}
       />
       <Stack.Screen
         name="EditMatch"
@@ -27,7 +27,7 @@ const MatchStackNavigator = ({route}) => {
         name="AddMatch"
         component={AddMatchScreen}
         options={{ title: 'Add New Match' }}
-        initialParams={{ eventId }}
+        initialParams={{ dayId }}
       />
 
     </Stack.Navigator>

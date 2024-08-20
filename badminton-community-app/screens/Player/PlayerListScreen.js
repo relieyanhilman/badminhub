@@ -16,7 +16,6 @@ const PlayerListScreen = ({ navigation, route }) => {
   const [expandedPlayerIds, setExpandedPlayerIds] = useState([]);
   const [applyingPlayerIds, setApplyingPlayerIds] = useState([]); // State untuk melacak tombol yang sedang diproses
 
-
   const [filterModalVisible, setFilterModalVisible] = useState(false);
 
   // State untuk filter
@@ -29,6 +28,9 @@ const PlayerListScreen = ({ navigation, route }) => {
   // State untuk pencarian
   const [searchQuery, setSearchQuery] = useState('');
 
+  // State untuk fitur edit to paid
+  const [processingPlayerId, setProcessingPlayerId] = useState(null);
+
   useEffect(() => {
     fetchPlayers();
   }, []);
@@ -40,7 +42,6 @@ const PlayerListScreen = ({ navigation, route }) => {
         // menghapus refresh param setelah fetching
         navigation.setParams({ refresh: false });
       }
-      route.params.refresh
     }, [route.params?.refresh])
   );
 
@@ -236,8 +237,37 @@ const PlayerListScreen = ({ navigation, route }) => {
     setFilteredPlayers(finalResult);
   };
 
-  const handleAddPlayer = () => {
-    navigation.navigate('AddPlayer');
+  const handlePaymentStatusChange = async (playerId) => {
+    setProcessingPlayerId(playerId);
+    try {
+      const token = await SecureStore.getItemAsync('userToken');
+      if (!token) throw new Error('User token not found');
+
+      const response = await fetch(`https://api.pbbedahulu.my.id/cashflow/paid`, {
+        method: 'POST',
+        headers: {
+          'Authorization': token,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id: playerId }),
+      });
+
+      if (response.ok) {
+        setPlayers((prevPlayers) =>
+          prevPlayers.map((player) =>
+            player.id === playerId ? { ...player, payment_status: 'paid' } : player
+          )
+        );
+      } else {
+        const data = await response.json();
+        Alert.alert('Error', data.message || 'Failed to change payment status');
+      }
+    } catch (error) {
+      console.log(error);
+      Alert.alert('Error', 'An error occurred while changing payment status');
+    } finally {
+      setProcessingPlayerId(null);
+    }
   };
 
   const toggleExpand = (playerId) => {
@@ -252,6 +282,7 @@ const PlayerListScreen = ({ navigation, route }) => {
    const isMasterPlayer = item.isMasterPlayer;
    const isExpanded = expandedPlayerIds.includes(item.id);
    const isApplying = applyingPlayerIds.includes(item.id);
+   const isProcessing = processingPlayerId === item.id;
 
    return (
       <View style={isMasterPlayer ? styles.masterItem : styles.item}>
@@ -299,7 +330,12 @@ const PlayerListScreen = ({ navigation, route }) => {
             <Button title="Apply Player" onPress={() => handleApplyPlayer(item.id)} disabled={isApplying}/>
           ) : (
             <>
-              <Button title="Edit" onPress={() => navigation.navigate('EditPlayer', { player: item })} />
+              <Button
+                title={isProcessing ? "Processing..." : "Mark as Paid"}
+                onPress={() => handlePaymentStatusChange(item.id)}
+                disabled={item.payment_status === "paid" || isProcessing}
+                color={item.payment_status === "paid" ? "green" : "orange"}
+              />
             </>
           )}
         </View>
