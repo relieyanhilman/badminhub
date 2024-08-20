@@ -16,7 +16,7 @@ const EventListScreen = ({ navigation, route }) => {
   const [totalPages, setTotalPages] = useState(1);
   const [searchQuery, setSearchQuery] = useState(''); // State untuk query pencarian
 
-  const {updateEventName} = useContext(EventContext)
+  const {updateEvent} = useContext(EventContext)
 
   const handleLogout = async () => {
     await SecureStore.deleteItemAsync('userToken'); // Hapus token dari SecureStore
@@ -93,8 +93,8 @@ const EventListScreen = ({ navigation, route }) => {
   }, []);
 
   const handleEventPress = (eventId, eventName) => {
-    updateEventName(eventName)
-    navigation.navigate('EventDayList', { eventId});
+    updateEvent(eventId, eventName)
+    navigation.navigate('EventDayList');
   };
 
   const handleAddEvent = () => {
@@ -179,7 +179,7 @@ const EventListScreen = ({ navigation, route }) => {
         </View>
         <View style={styles.cardContent}>
           <View style={styles.row}>
-            <Text style={styles.label}>Nama Hall:</Text>
+            <Text style={styles.label}>Hall:</Text>
             <Text style={styles.value}>{item.hall.name}</Text>
           </View>
           <View style={styles.row}>

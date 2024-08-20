@@ -13,8 +13,6 @@ const PlayerListScreen = ({ navigation, route }) => {
   const [refreshing, setRefreshing] = useState(false); // State untuk pull-to-refresh
   const [error, setError] = useState(null);
   const [expandedPlayerIds, setExpandedPlayerIds] = useState([]);
-  const [applyingPlayerIds, setApplyingPlayerIds] = useState([]); // State untuk melacak tombol yang sedang diproses
-
 
   const [filterModalVisible, setFilterModalVisible] = useState(false);
 
@@ -33,12 +31,12 @@ const PlayerListScreen = ({ navigation, route }) => {
   }, []);
 
   useEffect(() => {
-      if (searchQuery.trim() === '') {
-            setFilteredPlayers([...players, ...masterPlayers]); // Set filteredPlayers ke semua data saat searchQuery kosong
-          } else {
-            applyFiltersAndSearch(); // Apply search jika ada query
-          }
-  }, [searchQuery, players, masterPlayers]);
+    if (searchQuery.trim() === '') {
+      setFilteredPlayers([...players, ...masterPlayers]); // Set filteredPlayers ke semua data saat searchQuery kosong
+    } else {
+      applyFiltersAndSearch(); // Apply search jika ada query
+    }
+  }, [players, masterPlayers, searchQuery, levelFilter, matchPlayedFilter, paymentStatusFilter, genderFilter, ageRangeFilter]);
 
   const fetchPlayers = async (isRefreshing = false) => {
     if (!isRefreshing) {
@@ -82,15 +80,9 @@ const PlayerListScreen = ({ navigation, route }) => {
         const masterPlayerData = data2.data.filter(masterPlayer =>
           !data1.data.attendees.some(player => player.player.id === masterPlayer.id)
         );
-
-        const updatedPlayers = data1.data.attendees.map(player => ({ ...player, isMasterPlayer: false }));
-        const updatedMasterPlayers = masterPlayerData.map(player => ({ ...player, isMasterPlayer: true }));
-
-        setPlayers(updatedPlayers);
-        setMasterPlayers(updatedMasterPlayers);
-
-        // Langsung terapkan filter setelah setPlayers dan setMasterPlayers
-        applyFiltersAndSearch(updatedPlayers, updatedMasterPlayers);
+        setPlayers(data1.data.attendees.map(player => ({ ...player, isMasterPlayer: false })));
+        setMasterPlayers(masterPlayerData.map(player => ({ ...player, isMasterPlayer: true })));
+        setFilteredPlayers([...players, ...masterPlayers]); // Set filtered players pertama kali
       } else {
         setError(data.message || 'Failed to fetch players');
       }
@@ -105,6 +97,7 @@ const PlayerListScreen = ({ navigation, route }) => {
 
   const onRefresh = () => {
     setRefreshing(true);
+
     fetchPlayers(true);
   };
 
@@ -140,12 +133,6 @@ const PlayerListScreen = ({ navigation, route }) => {
   };
 
   const handleApplyPlayer = async (playerId) => {
-    if (applyingPlayerIds.includes(playerId)) {
-      return; // Jika tombol sudah ditekan, tidak lakukan apa-apa
-    }
-
-    setApplyingPlayerIds(prevState => [...prevState, playerId]); // Tandai bahwa pemain ini sedang diproses
-
     try {
       const token = await SecureStore.getItemAsync('userToken');
       if (!token) {
@@ -179,13 +166,9 @@ const PlayerListScreen = ({ navigation, route }) => {
 
           if(response2.ok){
             const appliedPlayer = data2.data.attendees.filter(player => player.player_id === playerId)
-            const updatedPlayers = [...players, { ...appliedPlayer[0], isMasterPlayer: false }];
-            const updatedMasterPlayers = masterPlayers.filter(player => player.id !== playerId);
-
-            setPlayers(updatedPlayers);
-            setMasterPlayers(updatedMasterPlayers);
-
-            applyFiltersAndSearch(updatedPlayers, updatedMasterPlayers);
+            setPlayers(prevPlayers => [...prevPlayers, { ...appliedPlayer[0], isMasterPlayer: false }]);
+            setMasterPlayers(prevMasterPlayers => prevMasterPlayers.filter(player => player.id !== playerId));
+            setFilteredPlayers([...players, ...masterPlayers]);
           }else{
             const data = await response.json();
             Alert.alert('Error', data.message || 'Failed to get new mabar day player');
@@ -197,8 +180,6 @@ const PlayerListScreen = ({ navigation, route }) => {
     } catch (err) {
       console.log(err);
       Alert.alert('Error', 'An error occurred while applying player');
-    }finally{
-      setApplyingPlayerIds(prevState => prevState.filter(id => id !== playerId)); // Selesai, hilangkan dari state
     }
   };
 
@@ -221,8 +202,8 @@ const PlayerListScreen = ({ navigation, route }) => {
     return hasilFilter;
   };
 
-  const applyFiltersAndSearch = (updatedPlayers = players, updatedMasterPlayers = masterPlayers) => {
-    const combinedPlayers = [...updatedPlayers, ...updatedMasterPlayers];
+  const applyFiltersAndSearch = () => {
+    const combinedPlayers = [...players, ...masterPlayers];
     const filtered = applyFilters(combinedPlayers);
     const finalResult = applySearchFilter(filtered, searchQuery);
     setFilteredPlayers(finalResult);
@@ -263,7 +244,6 @@ const PlayerListScreen = ({ navigation, route }) => {
   const renderItem = ({ item }) => {
    const isMasterPlayer = item.isMasterPlayer;
    const isExpanded = expandedPlayerIds.includes(item.id);
-   const isApplying = applyingPlayerIds.includes(item.id);
 
    return (
       <View style={isMasterPlayer ? styles.masterItem : styles.item}>
@@ -308,7 +288,7 @@ const PlayerListScreen = ({ navigation, route }) => {
             <Text style={styles.buttonText}>{isExpanded ? 'Hide Details' : 'Show Details'}</Text>
           </TouchableOpacity>
           {isMasterPlayer ? (
-            <Button title="Apply Player" onPress={() => handleApplyPlayer(item.id)} disabled={isApplying}/>
+            <Button title="Apply Player" onPress={() => handleApplyPlayer(item.id)} />
           ) : (
             <>
               <Button title="Edit" onPress={() => navigation.navigate('EditPlayer', { player: item })} />
@@ -410,14 +390,6 @@ const PlayerListScreen = ({ navigation, route }) => {
               <Picker.Item label="71-80" value="71-80" />
             </Picker>
 
-          <View style={styles.modalButtonContainer}>
-            <TouchableOpacity
-              style={styles.cancelFilterButton}
-              onPress={() => setFilterModalVisible(false)}
-            >
-              <Text style={styles.cancelFilterButtonText}>Cancel</Text>
-            </TouchableOpacity>
-
             <TouchableOpacity
               style={styles.applyFilterButton}
               onPress={() => {
@@ -427,8 +399,6 @@ const PlayerListScreen = ({ navigation, route }) => {
             >
               <Text style={styles.applyFilterButtonText}>Apply Filters</Text>
             </TouchableOpacity>
-           </View>
-
           </View>
         </View>
       </Modal>
@@ -564,7 +534,6 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
-
   filterButtonText: {
     color: '#fff',
     fontWeight: 'bold',
@@ -592,27 +561,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     textAlign: 'center',
   },
-  modalButtonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 16,
-  },
-  cancelFilterButton: {
-    flex: 1,
-    backgroundColor: '#d9534f',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 5,
-    alignItems: 'center',
-    marginRight: 8,
-    marginTop: 16,
-  },
-  cancelFilterButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
   applyFilterButton: {
-    flex: 1,
     backgroundColor: '#007BFF',
     paddingVertical: 12,
     paddingHorizontal: 20,

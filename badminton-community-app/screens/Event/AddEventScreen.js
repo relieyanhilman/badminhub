@@ -10,14 +10,15 @@ const AddEventScreen = ({ navigation }) => {
   const [name, setName] = useState('');
   const [hallId, setHallId] = useState('');
   const [day, setDay] = useState('');
-  const [time, setTime] = useState('');
+  const [start_time, setStartTime] = useState('');
+  const [end_time, setEndTime] = useState('');
   const [courtCountUsed, setCourtCountUsed] = useState('');
   const [maxSlot, setMaxSlot] = useState('');
   const [htmMember, setHtmMember] = useState('');
   const [htmNonmember, setHtmNonmember] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const [timePickerVisible, setTimePickerVisible] = useState(false);
+  const [timePickerVisible, setTimePickerVisible] = useState({ visible: false, field: '' });
 
   //halls untuk menyimpan data sementara hasil fetching seluruh hall
   const [halls, setHalls] = useState([]);
@@ -26,17 +27,20 @@ const AddEventScreen = ({ navigation }) => {
   const [loadingHalls, setLoadingHalls] = useState(false);
 
 
+
   // Refs untuk setiap TextInput
   const hallIdRef = useRef();
   const dayRef = useRef();
-  const timeRef = useRef();
+  const startTimeUsedRef = useRef();
+  const endTimeUsedRef = useRef()
   const courtCountUsedRef = useRef();
   const maxSlotRef = useRef();
   const htmMemberRef = useRef();
   const htmNonmemberRef = useRef();
 
-  const showTimePicker = () => {
-    setTimePickerVisible(true);
+
+  const showTimePicker = (field) => {
+    setTimePickerVisible({ visible: true, field });
   };
 
   const handleTimeChange = (event, selectedTime) => {
@@ -50,8 +54,15 @@ const AddEventScreen = ({ navigation }) => {
       hours = hours ? hours : 12; // Menjadikan 0 jam menjadi 12
       const minutesStr = minutes < 10 ? `0${minutes}` : minutes;
 
-      setTime(`${hours}:${minutesStr} ${ampm}`);
-      courtCountUsedRef.current.focus(); // Fokus ke input berikutnya
+      const formattedTime = `${hours}:${minutesStr} ${ampm}`;
+
+      if (timePickerVisible.field === 'start_time') {
+        setStartTime(formattedTime);
+        endTimeUsedRef.current.focus()
+      } else if (timePickerVisible.field === 'end_time') {
+        setEndTime(formattedTime);
+        courtCountUsedRef.current.focus(); // Fokus ke input berikutnya
+      }
     }
   };
 
@@ -110,7 +121,7 @@ const AddEventScreen = ({ navigation }) => {
 
   const handleSave = async () => {
     // Validasi input
-    if (!name || !hallId || !day || !time || !courtCountUsed || !maxSlot || !htmMember || !htmNonmember) {
+    if (!name.trim() || !hallId.trim() || !day.trim() || !start_time.trim() || !end_time.trim() || !courtCountUsed.trim() || !maxSlot.trim() || !htmMember.trim() || !htmNonmember.trim()) {
       Alert.alert('Validation Error', 'Please fill in all the required fields.');
       return;
     }
@@ -118,6 +129,8 @@ const AddEventScreen = ({ navigation }) => {
     setLoading(true);
 
     try {
+      // Gabungkan start_time dan end_time menjadi satu string untuk atribut time
+      const combinedTime = `${start_time}-${end_time}`;
       const token = await SecureStore.getItemAsync('userToken');
       if (!token) {
         throw new Error('User token not found');
@@ -133,7 +146,7 @@ const AddEventScreen = ({ navigation }) => {
         	name: name,
             hall_id: parseInt(hallId),
             day: day,
-            time: time,
+            time: combinedTime,
             court_count_used: parseInt(courtCountUsed),
             max_slot: parseInt(maxSlot),
             htm_member: parseFloat(htmMember),
@@ -220,7 +233,7 @@ const AddEventScreen = ({ navigation }) => {
         selectedValue={day}
         onValueChange={(itemValue, itemIndex) => {
           setDay(itemValue)
-          timeRef.current.focus(); // Memfokuskan ke TextInput waktu bermain setelah memilih hari
+          startTimeUsedRef.current.focus(); // Memfokuskan ke TextInput waktu bermain setelah memilih hari
         }}
         style={styles.pickerDay}
         ref={dayRef}
@@ -236,21 +249,30 @@ const AddEventScreen = ({ navigation }) => {
         <Picker.Item label="Saturday" value="sat" />
       </Picker>
 
-      <TextInput
-        placeholder="Waktu Bermain"
-        value={time}
-        onFocus={showTimePicker} // Menampilkan time picker saat text input difokuskan
-        style={styles.input}
-        ref={timeRef} // Ref untuk TextInput waktu bermain
-      />
-      {timePickerVisible && (
-        <DateTimePicker
-          value={new Date()}
-          mode="time"
-          display="default"
-          onChange={handleTimeChange}
+        <Text style={styles.label}>Waktu Mulai</Text>
+        <TextInput
+          value={start_time}
+          onFocus={() => showTimePicker('start_time')}
+          style={styles.input}
+          ref={startTimeUsedRef}
         />
-      )}
+
+        <Text style={styles.label}>Waktu Selesai</Text>
+        <TextInput
+          value={end_time}
+          onFocus={() => showTimePicker('end_time')}
+          style={styles.input}
+          ref={endTimeUsedRef}
+        />
+
+        {timePickerVisible.visible && (
+          <DateTimePicker
+            value={new Date()}
+            mode="time"
+            display="default"
+            onChange={handleTimeChange}
+          />
+        )}
 
       <TextInput
         placeholder="Jumlah Court yang Digunakan"

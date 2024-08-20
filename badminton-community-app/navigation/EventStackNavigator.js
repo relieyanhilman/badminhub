@@ -7,6 +7,7 @@ import EditEventScreen from '../screens/Event/EditEventScreen';
 import {EventDetailNavigator} from './EventDetailNavigator';
 import EventDayListScreen from '../screens/EventDay/EventDayListScreen';
 import AddEventDayScreen from '../screens/EventDay/AddEventDayScreen';
+import EditEventDayScreen from '../screens/EventDay/EditEventDayScreen';
 
 const Stack = createStackNavigator();
 
@@ -27,6 +28,11 @@ const EventStackNavigator = () => {
         name="AddEventDay"
         component={AddEventDayScreen}
         options={{ title: 'Add Event Day' }}
+      />
+      <Stack.Screen
+        name="EditEventDay"
+        component={EditEventDayScreen}
+        options={{ title: 'Edit Event Day' }}
       />
       <Stack.Screen
         name="EventDetail"
