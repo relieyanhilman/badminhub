@@ -1,0 +1,591 @@
+//Player/PlayerListScreen
+import React, { useState, useEffect } from 'react';
+import { View, Text, FlatList, Button, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, Modal, TextInput } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
+import * as SecureStore from 'expo-secure-store';
+
+const PlayerListScreen = ({ navigation, route }) => {
+  const { dayId } = route.params;
+  const [players, setPlayers] = useState([]);
+  const [masterPlayers, setMasterPlayers] = useState([]);
+  const [filteredPlayers, setFilteredPlayers] = useState([]); // State untuk menyimpan hasil pencarian
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false); // State untuk pull-to-refresh
+  const [error, setError] = useState(null);
+  const [expandedPlayerIds, setExpandedPlayerIds] = useState([]);
+
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
+
+  // State untuk filter
+  const [levelFilter, setLevelFilter] = useState('');
+  const [matchPlayedFilter, setMatchPlayedFilter] = useState('');
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState('');
+  const [genderFilter, setGenderFilter] = useState('');
+  const [ageRangeFilter, setAgeRangeFilter] = useState('');
+
+  // State untuk pencarian
+  const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    fetchPlayers();
+  }, []);
+
+  useEffect(() => {
+    if (searchQuery.trim() === '') {
+      setFilteredPlayers([...players, ...masterPlayers]); // Set filteredPlayers ke semua data saat searchQuery kosong
+    } else {
+      applyFiltersAndSearch(); // Apply search jika ada query
+    }
+  }, [players, masterPlayers, searchQuery, levelFilter, matchPlayedFilter, paymentStatusFilter, genderFilter, ageRangeFilter]);
+
+  const fetchPlayers = async (isRefreshing = false) => {
+    if (!isRefreshing) {
+        setLoading(true)
+    }
+    setError(null);
+
+    try {
+      const token = await SecureStore.getItemAsync('userToken');
+      if (!token) {
+        throw new Error('User token not found');
+      }
+
+      // Fetch Event Day Players
+      const response1 = await fetch(`https://api.pbbedahulu.my.id/mabar/day/${dayId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': token,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data1 = await response1.json();
+
+      // Fetch Master Players
+      const response2 = await fetch(`https://api.pbbedahulu.my.id/player`, {
+        method: 'POST',
+        headers: {
+          'Authorization': token,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          page: 1,
+          perPage: 1000,  // Fetch all data
+        }),
+      });
+
+      const data2 = await response2.json();
+
+      if (response1.ok && response2.ok) {
+        const masterPlayerData = data2.data.filter(masterPlayer =>
+          !data1.data.attendees.some(player => player.player.id === masterPlayer.id)
+        );
+        setPlayers(data1.data.attendees.map(player => ({ ...player, isMasterPlayer: false })));
+        setMasterPlayers(masterPlayerData.map(player => ({ ...player, isMasterPlayer: true })));
+        setFilteredPlayers([...players, ...masterPlayers]); // Set filtered players pertama kali
+      } else {
+        setError(data.message || 'Failed to fetch players');
+      }
+    } catch (err) {
+      console.log(err);
+      setError('An error occurred while fetching data');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  const onRefresh = () => {
+    setRefreshing(true);
+
+    fetchPlayers(true);
+  };
+
+  const applyFilters = (players) => {
+  return players.filter(player => {
+    const isMasterPlayer = player.isMasterPlayer;
+
+    const matchesLevelFilter = levelFilter === '' ||
+      (isMasterPlayer ? player.level === levelFilter : player.player_level === levelFilter);
+
+    const matchesMatchPlayedFilter = matchPlayedFilter === '' ||
+      (!isMasterPlayer && player.match_played === parseInt(matchPlayedFilter));
+
+    const matchesPaymentStatusFilter = paymentStatusFilter === '' ||
+      (!isMasterPlayer && player.payment_status === paymentStatusFilter);
+
+    const matchesGenderFilter = genderFilter === '' ||
+      (isMasterPlayer ? player.gender === genderFilter : player.player.gender === genderFilter);
+
+    const matchesAgeRangeFilter = ageRangeFilter === '' ||
+      (isMasterPlayer ? player.age_range === ageRangeFilter : player.player.age_range === ageRangeFilter);
+
+    return matchesLevelFilter &&
+           matchesMatchPlayedFilter &&
+           matchesPaymentStatusFilter &&
+           matchesGenderFilter &&
+           matchesAgeRangeFilter;
+  });
+};
+
+  const handleSearch = (query) => {
+      setSearchQuery(query)
+  };
+
+  const handleApplyPlayer = async (playerId) => {
+    try {
+      const token = await SecureStore.getItemAsync('userToken');
+      if (!token) {
+        throw new Error('User token not found');
+      }
+
+      const response = await fetch(`https://api.pbbedahulu.my.id/mabar/day/detail/create`, {
+        method: 'POST',
+        headers: {
+          'Authorization': token,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          open_mabar_day_id: dayId,
+          player_id: playerId,
+          payment_status: 'unpaid',
+        }),
+      });
+
+      if (response.ok) {
+          //Temukan pemain dari API List Player Mabar Day
+          const response2 = await fetch(`https://api.pbbedahulu.my.id/mabar/day/${dayId}`, {
+            method: 'GET',
+            headers: {
+              'Authorization': token,
+              'Content-Type': 'application/json',
+            },
+          });
+
+          const data2 = await response2.json()
+
+          if(response2.ok){
+            const appliedPlayer = data2.data.attendees.filter(player => player.player_id === playerId)
+            setPlayers(prevPlayers => [...prevPlayers, { ...appliedPlayer[0], isMasterPlayer: false }]);
+            setMasterPlayers(prevMasterPlayers => prevMasterPlayers.filter(player => player.id !== playerId));
+            setFilteredPlayers([...players, ...masterPlayers]);
+          }else{
+            const data = await response.json();
+            Alert.alert('Error', data.message || 'Failed to get new mabar day player');
+          }
+      } else {
+        const data = await response.json();
+        Alert.alert('Error', data.message || 'Failed to apply player');
+      }
+    } catch (err) {
+      console.log(err);
+      Alert.alert('Error', 'An error occurred while applying player');
+    }
+  };
+
+  const applySearchFilter = (players, query) => {
+    if (!query){
+      return players
+    }
+      const hasilFilter = [];
+      for (const playerItem of players){
+        if (playerItem.isMasterPlayer){
+           if(playerItem.name.toLowerCase().includes(query.toLowerCase()) || playerItem.alias.toLowerCase().includes(query.toLowerCase())){
+             hasilFilter.push(playerItem)
+           }
+        }else{
+           if(playerItem.player.name.toLowerCase().includes(query.toLowerCase()) || playerItem.player.alias.toLowerCase().includes(query.toLowerCase())){
+             hasilFilter.push(playerItem)
+           }
+        }
+      }
+    return hasilFilter;
+  };
+
+  const applyFiltersAndSearch = () => {
+    const combinedPlayers = [...players, ...masterPlayers];
+    const filtered = applyFilters(combinedPlayers);
+    const finalResult = applySearchFilter(filtered, searchQuery);
+    setFilteredPlayers(finalResult);
+  };
+
+  const handleAddPlayer = () => {
+    navigation.navigate('AddPlayer');
+  };
+
+  const handleDeletePlayer = (playerId) => {
+    Alert.alert(
+      "Delete Player",
+      "Are you sure you want to delete this player?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel"
+        },
+        {
+          text: "Delete",
+          onPress: () => {
+            setPlayers((prevPlayers) => prevPlayers.filter((player) => player.id !== playerId));
+          },
+          style: "destructive"
+        }
+      ]
+    );
+  };
+
+  const toggleExpand = (playerId) => {
+    setExpandedPlayerIds(prevState =>
+      prevState.includes(playerId)
+        ? prevState.filter(id => id !== playerId)
+        : [...prevState, playerId]
+    );
+  };
+
+  const renderItem = ({ item }) => {
+   const isMasterPlayer = item.isMasterPlayer;
+   const isExpanded = expandedPlayerIds.includes(item.id);
+
+   return (
+      <View style={isMasterPlayer ? styles.masterItem : styles.item}>
+        <View style={styles.itemInfo}>
+        {isMasterPlayer ? (
+            <>
+              <Text style={styles.nameText}>{item.name} ({item.alias})</Text>
+              <Text style={styles.text}>Level: {item.level}</Text>
+              <Text style={styles.text}>Age Range: {item.age_range}</Text>
+            </>
+        ) : (
+            <>
+              <Text style={styles.nameText}>{item.player.name} ({item.player.alias})</Text>
+              <Text style={styles.text}>Level: {item.player_level}</Text>
+              <Text style={styles.text}>Arrival Time: {new Date(item.player_arrival_time).toLocaleString()}</Text>
+              <Text style={styles.text}>Matches Played: {item.match_played}</Text>
+              <Text style={styles.text}>Shuttlecock Used: {item.shuttlecock_used}</Text>
+              <Text style={styles.text}>Payment Status: {item.payment_status}</Text>
+            </>
+        )}
+
+
+        </View>
+        {isExpanded && (
+          <View style={styles.hiddenInfo}>
+            {isMasterPlayer? (
+                <>
+                <Text style={styles.text}>Gender: {item.gender}</Text>
+                <Text style={styles.text}>Contact: {item.contact}</Text>
+                </>
+            ) : (
+                <>
+                <Text style={styles.text}>Gender: {item.player.gender}</Text>
+                <Text style={styles.text}>Contact: {item.player.contact}</Text>
+                <Text style={styles.text}>Age Range: {item.player.age_range}</Text>
+                </>
+            )}
+          </View>
+        )}
+        <View style={styles.itemButtons}>
+          <TouchableOpacity style={styles.expandButton} onPress={() => toggleExpand(item.id)}>
+            <Text style={styles.buttonText}>{isExpanded ? 'Hide Details' : 'Show Details'}</Text>
+          </TouchableOpacity>
+          {isMasterPlayer ? (
+            <Button title="Apply Player" onPress={() => handleApplyPlayer(item.id)} />
+          ) : (
+            <>
+              <Button title="Edit" onPress={() => navigation.navigate('EditPlayer', { player: item })} />
+              <Button title="Delete" onPress={() => handleDeletePlayer(item.id)} color="red" />
+            </>
+          )}
+        </View>
+      </View>
+);};
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#0000ff" />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity onPress={fetchPlayers} style={styles.retryButton}>
+          <Text style={styles.retryText}>Try Again</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+
+      <View style={styles.buttonContainer}>
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search by name or alias"
+          value={searchQuery}
+          onChangeText={handleSearch}
+        />
+        <TouchableOpacity
+          style={styles.filterButton}
+          onPress={() => setFilterModalVisible(true)}
+        >
+          <Text style={styles.buttonText}>FILTER</Text>
+        </TouchableOpacity>
+      </View>
+
+      <Modal
+        visible={filterModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setFilterModalVisible(false)}
+      >
+
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Filter Options</Text>
+
+            <Text style={styles.label}>Player Level</Text>
+            <Picker selectedValue={levelFilter} onValueChange={(itemValue) => setLevelFilter(itemValue)}>
+              <Picker.Item label="All Levels" value="" />
+              <Picker.Item label="Level A" value="A" />
+              <Picker.Item label="Level B" value="B" />
+              <Picker.Item label="Level C" value="C" />
+            </Picker>
+
+            <Text style={styles.label}>Matches Played</Text>
+            <TextInput
+              style={styles.textInput}
+              placeholder="Enter exact number"
+              value={matchPlayedFilter}
+              onChangeText={(text) => setMatchPlayedFilter(text)}
+              keyboardType="numeric"
+            />
+
+            <Text style={styles.label}>Payment Status</Text>
+            <Picker selectedValue={paymentStatusFilter} onValueChange={(itemValue) => setPaymentStatusFilter(itemValue)}>
+              <Picker.Item label="All Payment Status" value="" />
+              <Picker.Item label="Paid" value="paid" />
+              <Picker.Item label="Unpaid" value="unpaid" />
+            </Picker>
+
+            <Text style={styles.label}>Gender</Text>
+            <Picker selectedValue={genderFilter} onValueChange={(itemValue) => setGenderFilter(itemValue)}>
+              <Picker.Item label="All Genders" value="" />
+              <Picker.Item label="Male" value="M" />
+              <Picker.Item label="Female" value="F" />
+            </Picker>
+
+            <Text style={styles.label}>Age Range</Text>
+            <Picker selectedValue={ageRangeFilter} onValueChange={(itemValue) => setAgeRangeFilter(itemValue)}>
+              <Picker.Item label="All Age Ranges" value="" />
+              <Picker.Item label="15-20" value="15-20" />
+              <Picker.Item label="21-30" value="21-30" />
+              <Picker.Item label="31-40" value="31-40" />
+              <Picker.Item label="41-50" value="41-50" />
+              <Picker.Item label="51-60" value="51-60" />
+              <Picker.Item label="61-70" value="61-70" />
+              <Picker.Item label="71-80" value="71-80" />
+            </Picker>
+
+            <TouchableOpacity
+              style={styles.applyFilterButton}
+              onPress={() => {
+                setFilterModalVisible(false);
+                applyFiltersAndSearch();
+              }}
+            >
+              <Text style={styles.applyFilterButtonText}>Apply Filters</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      <FlatList
+        data={filteredPlayers}
+        renderItem={renderItem}
+        keyExtractor={item => item.isMasterPlayer ? `master-${item.id}` : `event-${item.id}`}
+        contentContainerStyle={{ paddingBottom: 16 }}
+        refreshing={refreshing}
+        onRefresh={onRefresh}
+      />
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 16,
+    backgroundColor: '#f5f5f5',
+  },
+  filterButton: {
+    flex: 2,
+    height: 40,
+    backgroundColor: '#646464',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  searchInput: {
+    flex: 8,
+    height: 40,
+    marginRight: 3,
+    borderColor: '#ccc',
+    borderWidth: 1,
+    borderRadius: 5,
+    paddingHorizontal: 10,
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 7
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  errorText: {
+    fontSize: 18,
+    color: 'red',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  retryButton: {
+    backgroundColor: '#007BFF',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+  },
+  retryText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  listContainer: {
+    paddingHorizontal: 16,
+  },
+  item: {
+      backgroundColor: '#f9f9f9',
+      padding: 16,
+      marginVertical: 8,
+      borderRadius: 8,
+      borderColor: '#ccc',
+      borderWidth: 1,
+  },
+  masterItem: {
+    backgroundColor: '#e6f7ff', // Highlighted background color for masterPlayers
+    padding: 16,
+    marginVertical: 8,
+    borderRadius: 8,
+    borderColor: '#007BFF', // Blue border for masterPlayers
+    borderWidth: 1,
+  },
+  itemInfo: {
+    marginBottom: 12,
+  },
+  nameText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  text: {
+    fontSize: 14,
+    marginBottom: 4,
+    color: '#555',
+  },
+  itemButtons: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
+  buttonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  expandButton: {
+    backgroundColor: '#d3d3d3',
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
+  },
+  buttonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  filterContainer: {
+    marginBottom: 16,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    padding: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  filterButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    width: '80%',
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  applyFilterButton: {
+    backgroundColor: '#007BFF',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  applyFilterButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: 'bold'
+  },
+  textInput: {
+    height: 40,
+    borderColor: '#ccc',
+    borderWidth: 1,
+    borderRadius: 5,
+    paddingHorizontal: 10,
+    marginBottom: 12,
+  },
+
+});
+
+export default PlayerListScreen;
