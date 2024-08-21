@@ -1,25 +1,101 @@
-// screens/EventListScreen.js
-import React, {useState, useEffect} from 'react';
-import { View, Text, FlatList, Button, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+// Event/EventListScreen.js
+
+import React, {useState, useEffect, useCallback, useContext} from 'react';
+import { View, Text, FlatList, Button, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, TextInput } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
+import { EventContext } from '../../EventContext';
+
+import * as SecureStore from 'expo-secure-store';
 
 const EventListScreen = ({ navigation, route }) => {
-  const [events, setEvents] = useState([
-    { id: '1', namaEvent: 'Open Mabar January', hall_id: '1', hari_bermain: 'Saturday', waktu_bermain: '4-6 PM', jumlah_court_yang_digunakan: 4, max_slot_pemain: 40, htm_member: 35000, htm_nonmember: 45000,  },
-    // Tambahkan data event di sini
-  ]);
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [error, setError] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [searchQuery, setSearchQuery] = useState(''); // State untuk query pencarian
 
- useEffect(() => {
-  if (route.params?.newEvent){
-     setEvents((prevEvents) => [...prevEvents, route.params.newEvent])
-  } else if(route.params?.updatedEvent){
-     handleUpdateEvent(route.params.updatedEvent)
-  }
- }, [route.params?.newEvent, route.params?.updatedEvent])
+  const {updateEvent} = useContext(EventContext)
 
- const handleEventPress = (eventId) => {
-      // Navigasi ke EventDetail, mengirimkan eventId sebagai parameter
-      navigation.navigate('EventDetail', { eventId });
-   };
+  const handleLogout = async () => {
+    await SecureStore.deleteItemAsync('userToken'); // Hapus token dari SecureStore
+    navigation.replace('Login'); // Arahkan ke halaman Login
+  };
+
+  const fetchEvents = async (page = 1, perPage = 10, search = '') => {
+    if (page > totalPages && page !== 1) return;
+
+    if (page === 1) {
+      setLoading(true);
+      setEvents([]);  // Reset events when starting a new search
+    } else {
+      setLoadingMore(true);
+    }
+
+    setError(null);
+
+    try {
+      const token = await SecureStore.getItemAsync('userToken');
+      if (!token) {
+        throw new Error('User token not found');
+      }
+      const response = await fetch('https://api.pbbedahulu.my.id/mabar', {
+        method: 'POST',
+        headers: {
+          'Authorization': `${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ page, perPage, search })
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        const dataRender = data["data"];
+
+        // Pastikan tidak ada duplikasi data dengan melakukan filter terhadap ID yang sama
+        const mergedEvents = page === 1
+          ? dataRender
+          : [...events, ...dataRender].filter((v, i, a) => a.findIndex(t => (t.id === v.id)) === i);
+
+        setEvents(mergedEvents);
+        setTotalPages(data.pagination.totalPages);
+        setCurrentPage(data.pagination.currentPage);
+      } else if (response.status === 401) { // Jika status 401, token tidak valid
+        Alert.alert('Session Expired', 'Your session has expired. Please login again.');
+        handleLogout(); // Hapus token dan arahkan ke Login
+      } else {
+        setError(data.message || 'Failed to fetch events');
+      }
+    } catch (err) {
+      console.log(err);
+      setError(err.message || 'An error occurred while fetching data');
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+    }
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      if (route.params?.refresh) {
+        fetchEvents();  // Fetch data again if refresh is true
+
+        // menghapus refresh param setelah fetching
+        navigation.setParams({ refresh: false });
+
+      }
+    }, [route.params?.refresh])
+  );
+
+  useEffect(() => {
+    fetchEvents();
+  }, []);
+
+  const handleEventPress = (eventId, eventName, eventHallId) => {
+    updateEvent(eventId, eventName, eventHallId)
+    navigation.navigate('EventDayList');
+  };
 
   const handleAddEvent = () => {
     navigation.navigate('AddEvent');
@@ -31,38 +107,71 @@ const EventListScreen = ({ navigation, route }) => {
 
   const handleUpdateEvent = (updatedEvent) => {
     setEvents((prevEvents) =>
-          prevEvents.map((event) =>
-            event.id === updatedEvent.id ? updatedEvent : event
-          )
-        );
-  }
+      prevEvents.map((event) =>
+        event.id === updatedEvent.id ? updatedEvent : event
+      )
+    );
+  };
 
-  const handleDeleteEvent = (eventId) => {
-      Alert.alert(
-        "Delete Event",
-        "Are you sure you want to delete this event?",
-        [
-          {
-            text: "Cancel",
-            style: "cancel"
+  const handleDeleteEvent = async (eventId) => {
+    Alert.alert(
+      "Delete Event",
+      "Are you sure you want to delete this event?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel"
+        },
+        {
+          text: "Delete",
+          onPress: async () => {
+            try {
+              const token = await SecureStore.getItemAsync('userToken');
+              if (!token) {
+                throw new Error('User token not found');
+              }
+
+              const response = await fetch(`https://api.pbbedahulu.my.id/mabar/${eventId}`, {
+                method: 'DELETE',
+                headers: {
+                  'Authorization': `${token}`,
+                  'Content-Type': 'application/json',
+                },
+              });
+
+              if (response.ok) {
+                fetchEvents()
+                Alert.alert('Success', 'Event deleted successfully');
+              } else {
+                let errorMessage = 'Failed to delete event';
+                if (response.status === 401) {
+                  errorMessage = 'Unauthorized access';
+                  await SecureStore.deleteItemAsync('userToken');
+                  navigation.replace('Login');
+                }
+                Alert.alert('Error', errorMessage);
+              }
+            } catch (err) {
+              console.log(err);
+              Alert.alert('Error', 'Something went wrong. Please try again later.');
+            }
           },
-          {
-            text: "Delete",
-            onPress: () => {
-              // Logika untuk menghapus event dari state
-              setEvents((prevEvents) => prevEvents.filter((event) => event.id !== eventId));
-            },
-            style: "destructive"
-          }
-        ]
-      );
-    };
+          style: "destructive"
+        }
+      ]
+    );
+  };
+
+  const handleSearchSubmit = () => {
+    setCurrentPage(1);  // Reset page number
+    fetchEvents(1, 10, searchQuery);  // Start fetching from page 1 with the search query
+  };
 
   const renderItem = ({ item }) => (
-    <TouchableOpacity onPress={() => handleEventPress(item.id)}>
+    <TouchableOpacity onPress={() => handleEventPress(item.id, item.name, item.hall_id)}>
       <View style={styles.card}>
         <View style={styles.cardHeader}>
-          <Text style={styles.eventName} numberOfLines={2} ellipsizeMode="tail" minimumFontScale={0.8}>{item.namaEvent}</Text>
+          <Text style={styles.eventName} numberOfLines={2} ellipsizeMode="tail" minimumFontScale={0.8}>{item.name}</Text>
           <View style={styles.itemButtons}>
             <Button title="Edit" onPress={() => handleEditEvent(item)} />
             <Button title="Delete" onPress={() => handleDeleteEvent(item.id)} color="red" />
@@ -70,20 +179,20 @@ const EventListScreen = ({ navigation, route }) => {
         </View>
         <View style={styles.cardContent}>
           <View style={styles.row}>
-            <Text style={styles.label}>Hari Bermain:</Text>
-            <Text style={styles.value}>{item.hari_bermain}</Text>
+            <Text style={styles.label}>Hall:</Text>
+            <Text style={styles.value}>{item.hall.name}</Text>
           </View>
           <View style={styles.row}>
-            <Text style={styles.label}>Waktu Bermain:</Text>
-            <Text style={styles.value}>{item.waktu_bermain}</Text>
+            <Text style={styles.label}>Hari & Waktu Bermain:</Text>
+            <Text style={styles.value}>{item.day}, {item.time}</Text>
           </View>
           <View style={styles.row}>
             <Text style={styles.label}>Court:</Text>
-            <Text style={styles.value}>{item.jumlah_court_yang_digunakan}</Text>
+            <Text style={styles.value}>{item.court_count_used}</Text>
           </View>
           <View style={styles.row}>
             <Text style={styles.label}>Slot Pemain:</Text>
-            <Text style={styles.value}>{item.max_slot_pemain}</Text>
+            <Text style={styles.value}>{item.max_slot}</Text>
           </View>
           <View style={styles.row}>
             <Text style={styles.label}>HTM Member:</Text>
@@ -93,18 +202,49 @@ const EventListScreen = ({ navigation, route }) => {
             <Text style={styles.label}>HTM Nonmember:</Text>
             <Text style={styles.value}>Rp{item.htm_nonmember.toLocaleString()}</Text>
           </View>
+          <View style={styles.row}>
+            <Text style={styles.label}>Note:</Text>
+            <Text style={styles.value}>{item.note}</Text>
+          </View>
         </View>
       </View>
     </TouchableOpacity>
   );
 
+  if (loading && currentPage === 1) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#0000ff" />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>{error}</Text>
+        <Button title="Try Again" onPress={() => fetchEvents()} />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
+      <TextInput
+        style={styles.searchInput}
+        placeholder="Search events..."
+        value={searchQuery}
+        onChangeText={setSearchQuery}
+        onSubmitEditing={handleSearchSubmit} // Memulai pencarian saat pengguna menekan "enter"
+      />
       <Button title="Add Event" onPress={handleAddEvent} />
       <FlatList
         data={events}
         renderItem={renderItem}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item.id.toString()}
+        onEndReached={() => fetchEvents(currentPage + 1, 10, searchQuery)}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={loadingMore ? <ActivityIndicator size="small" color="#0000ff" /> : null}
       />
     </View>
   );
@@ -115,6 +255,29 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
     backgroundColor: '#f5f5f5',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorText: {
+    fontSize: 18,
+    color: 'red',
+    marginBottom: 16,
+  },
+  searchInput: {
+    height: 40,
+    borderColor: 'gray',
+    borderWidth: 1,
+    borderRadius: 5,
+    paddingHorizontal: 8,
+    marginBottom: 16,
   },
   card: {
     backgroundColor: '#fff',
@@ -138,7 +301,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#333',
     flexShrink: 1,
-    marginRight: 10
+    marginRight: 10,
   },
   itemButtons: {
     flexDirection: 'row',
@@ -164,5 +327,6 @@ const styles = StyleSheet.create({
     color: '#000',
   },
 });
+
 
 export default EventListScreen;

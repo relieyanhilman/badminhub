@@ -1,4 +1,4 @@
-// screens/EditPlayerScreen.js
+// Player/EditPlayerScreen.js
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
 
