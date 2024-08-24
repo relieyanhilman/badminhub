@@ -1,6 +1,6 @@
 // Match/AddMatchScreen.js
 import React, { useState, useEffect, useContext } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Alert, ActivityIndicator, ScrollView} from 'react-native';
+import { View, Text, TextInput, Button, StyleSheet, Alert, ActivityIndicator, ScrollView, FlatList, TouchableOpacity} from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { EventContext } from '../../EventContext';
 import { Picker } from '@react-native-picker/picker';
@@ -17,21 +17,85 @@ const AddMatchScreen = ({ navigation, route }) => {
 
   const [courtId, setCourtId] = useState('');
   const [playerIdA1, setPlayerIdA1] = useState('');
+  const [playerNameA1, setPlayerNameA1] = useState(''); // State untuk menyimpan nama pemain A1
   const [playerLevelA1, setPlayerLevelA1] = useState('A');
   const [playerIdA2, setPlayerIdA2] = useState('');
+  const [playerNameA2, setPlayerNameA2] = useState(''); // State untuk menyimpan nama pemain A2
   const [playerLevelA2, setPlayerLevelA2] = useState('A');
   const [playerIdB1, setPlayerIdB1] = useState('');
+  const [playerNameB1, setPlayerNameB1] = useState(''); // State untuk menyimpan nama pemain B1
   const [playerLevelB1, setPlayerLevelB1] = useState('A');
   const [playerIdB2, setPlayerIdB2] = useState('');
+  const [playerNameB2, setPlayerNameB2] = useState(''); // State untuk menyimpan nama pemain B2
   const [playerLevelB2, setPlayerLevelB2] = useState('A');
   const [startTime, setStartTime] = useState(new Date());
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [note, setNote] = useState('');
 
+  // State for search query
+  const [searchQueryA1, setSearchQueryA1] = useState('');
+  const [searchQueryA2, setSearchQueryA2] = useState('');
+  const [searchQueryB1, setSearchQueryB1] = useState('');
+  const [searchQueryB2, setSearchQueryB2] = useState('');
+
+  const [filteredAttendeesA1, setFilteredAttendeesA1] = useState([]);
+  const [filteredAttendeesA2, setFilteredAttendeesA2] = useState([]);
+  const [filteredAttendeesB1, setFilteredAttendeesB1] = useState([]);
+  const [filteredAttendeesB2, setFilteredAttendeesB2] = useState([]);
+
+  // State to control the visibility of search inputs
+  const [showSearchA1, setShowSearchA1] = useState(false);
+  const [showSearchA2, setShowSearchA2] = useState(false);
+  const [showSearchB1, setShowSearchB1] = useState(false);
+  const [showSearchB2, setShowSearchB2] = useState(false);
+
+  const [showAllPlayersA1, setShowAllPlayersA1] = useState(false);
+  const [showAllPlayersA2, setShowAllPlayersA2] = useState(false);
+  const [showAllPlayersB1, setShowAllPlayersB1] = useState(false);
+  const [showAllPlayersB2, setShowAllPlayersB2] = useState(false);
+
   useEffect(() => {
     fetchAttendees();
     fetchCourts()
   }, []);
+
+  useEffect(() => {
+    setFilteredAttendeesA1(
+      searchQueryA1 === ''
+         ? attendees :
+         attendees.filter(att =>
+            att.player.name.toLowerCase().includes(searchQueryA1.toLowerCase()) ||
+            att.player.alias.toLowerCase().includes(searchQueryA1.toLowerCase())
+      )
+    )
+  }, [searchQueryA1, attendees]);
+
+  useEffect(() => {
+    setFilteredAttendeesA2(
+      attendees.filter(att =>
+        att.player.name.toLowerCase().includes(searchQueryA2.toLowerCase()) ||
+        att.player.alias.toLowerCase().includes(searchQueryA2.toLowerCase())
+      )
+    );
+  }, [searchQueryA2, attendees]);
+
+  useEffect(() => {
+    setFilteredAttendeesB1(
+      attendees.filter(att =>
+        att.player.name.toLowerCase().includes(searchQueryB1.toLowerCase()) ||
+        att.player.alias.toLowerCase().includes(searchQueryB1.toLowerCase())
+      )
+    );
+  }, [searchQueryB1, attendees]);
+
+  useEffect(() => {
+    setFilteredAttendeesB2(
+      attendees.filter(att =>
+        att.player.name.toLowerCase().includes(searchQueryB2.toLowerCase()) ||
+        att.player.alias.toLowerCase().includes(searchQueryB2.toLowerCase())
+      )
+    );
+  }, [searchQueryB2, attendees]);
 
   const fetchAttendees = async () => {
     try {
@@ -106,13 +170,13 @@ const AddMatchScreen = ({ navigation, route }) => {
           open_mabar_day_id: dayId,
           court_id: parseInt(courtId),
           player_id_a1: parseInt(playerIdA1),
-          player_level_a1: attendees.find(att => att.player.id === parseInt(playerIdA1)).player.level,
+          player_level_a1: playerLevelA1,
           player_id_a2: parseInt(playerIdA2),
-          player_level_a2: attendees.find(att => att.player.id === parseInt(playerIdA2)).player.level,
+          player_level_a2: playerLevelA2,
           player_id_b1: parseInt(playerIdB1),
-          player_level_b1: attendees.find(att => att.player.id === parseInt(playerIdB1)).player.level,
+          player_level_b1: playerLevelB1,
           player_id_b2: parseInt(playerIdB2),
-          player_level_b2: attendees.find(att => att.player.id === parseInt(playerIdB2)).player.level,
+          player_level_b2: playerLevelB2,
           start_time: formattedStartTime,
           note: note,
         }),
@@ -140,6 +204,43 @@ const AddMatchScreen = ({ navigation, route }) => {
 
   const formattedStartTime = `${startTime.getHours().toString().padStart(2, '0')}:${startTime.getMinutes().toString().padStart(2, '0')}:${startTime.getSeconds().toString().padStart(2, '0')}`;
 
+  const handleSelectPlayerA1 = (playerId) => {
+    const selectedPlayer = attendees.find(att => att.player.id === playerId);
+    setPlayerIdA1(playerId);
+    setPlayerNameA1(selectedPlayer.player.name); // Menyimpan nama pemain A1 yang dipilih
+    setPlayerLevelA1(selectedPlayer.player.level)
+    setSearchQueryA1('');
+    setShowSearchA1(false);
+    setShowAllPlayersA1(false);
+  };
+
+  const handleSelectPlayerA2 = (playerId) => {
+    const selectedPlayer = attendees.find(att => att.player.id === playerId);
+    setPlayerIdA2(playerId);
+    setPlayerNameA2(selectedPlayer.player.name); // Menyimpan nama pemain A2 yang dipilih
+    setPlayerLevelA2(selectedPlayer.player.level)
+    setSearchQueryA2('');
+    setShowSearchA2(false);
+  };
+
+  const handleSelectPlayerB1 = (playerId) => {
+    const selectedPlayer = attendees.find(att => att.player.id === playerId);
+    setPlayerIdB1(playerId);
+    setPlayerNameB1(selectedPlayer.player.name); // Menyimpan nama pemain B1 yang dipilih
+    setPlayerLevelB1(selectedPlayer.player.level)
+    setSearchQueryB1('');
+    setShowSearchB1(false);
+  };
+
+  const handleSelectPlayerB2 = (playerId) => {
+    const selectedPlayer = attendees.find(att => att.player.id === playerId);
+    setPlayerIdB2(playerId);
+    setPlayerNameB2(selectedPlayer.player.name); // Menyimpan nama pemain B1 yang dipilih
+    setPlayerLevelB2(selectedPlayer.player.level)
+    setSearchQueryB2('');
+    setShowSearchB2(false);
+  };
+
   if (loading || courtLoading ) {
     return (
       <View style={styles.loadingContainer}>
@@ -157,8 +258,32 @@ const AddMatchScreen = ({ navigation, route }) => {
     );
   }
 
+  const renderPlayerList = (filteredAttendees, showAllPlayers, setShowAllPlayers, handleSelectPlayer) => (
+    <>
+      <FlatList
+        data={filteredAttendees}
+        keyExtractor={(item) => item.player.id.toString()}
+        renderItem={({ item }) => (
+          <TouchableOpacity onPress={() => handleSelectPlayer(item.player.id)}>
+            <Text style={styles.listItem}>{`${item.player.name} (${item.player.alias}) - Level ${item.player.level}`}</Text>
+          </TouchableOpacity>
+        )}
+        nestedScrollEnabled={true}
+        style={showAllPlayers ? styles.searchResultList : [{ maxHeight: 200 }, styles.searchResultList]}
+      />
+      {!showAllPlayers && filteredAttendees.length > 3 && (
+        <TouchableOpacity onPress={() => setShowAllPlayers(true)}>
+          <Text style={styles.clickMoreText}>Click More</Text>
+        </TouchableOpacity>
+      )}
+    </>
+  );
+
   return (
-    <ScrollView style={styles.scrollContainer}>
+    <FlatList
+      data={[]}
+            keyExtractor={() => "key"}
+            ListHeaderComponent={
       <View style={styles.container}>
 
         <Text style={styles.label}>Court</Text>
@@ -177,95 +302,103 @@ const AddMatchScreen = ({ navigation, route }) => {
           ))}
         </Picker>
 
-      <Text style={styles.label}>Player A1</Text>
-      <Picker
-        selectedValue={playerIdA1}
-        style={styles.input}
-        onValueChange={(itemValue) => setPlayerIdA1(itemValue)}
-      >
-        <Picker.Item label="Select Player A1" value="" />
-        {attendees.map((attendee) => (
-          <Picker.Item
-            key={attendee.player.id}
-            label={`${attendee.player.name} (${attendee.player.alias})`}
-            value={attendee.player.id}
-          />
-        ))}
-      </Picker>
+          {/* Player A1 */}
+          <Text style={styles.label}>Player A1 {playerNameA1 !== '' && (
+                                                               <Text style={styles.selectedPlayerText}>
+                                                                 : {playerNameA1} - Level {playerLevelA1}
+                                                               </Text>
+                                                             )}</Text>
+          {!showSearchA1 ? (
+            <TouchableOpacity style={styles.button} onPress={() => setShowSearchA1(true)}>
+              <Text style={styles.buttonText}>Search Player A1</Text>
+            </TouchableOpacity>          ) : (
+            <>
+              <TextInput
+                style={styles.input}
+                placeholder="Search Player A1"
+                value={searchQueryA1}
+                onChangeText={setSearchQueryA1}
+              />
+              {renderPlayerList(filteredAttendeesA1, showAllPlayersA1, setShowAllPlayersA1, handleSelectPlayerA1)}
+            </>
+          )}
 
-        <Text style={styles.label}>Player A1 Level</Text>
-        <Text style={styles.levelText}>
-          {attendees.find(att => att.player.id === parseInt(playerIdA1))?.player.level || 'N/A'}
-        </Text>
 
-      <Text style={styles.label}>Player A2</Text>
-      <Picker
-        selectedValue={playerIdA2}
-        style={styles.input}
-        onValueChange={(itemValue) => setPlayerIdA2(itemValue)}
-      >
-       <Picker.Item label="Select Player A2" value="" />
-        {attendees.map((attendee) => (
-          <Picker.Item
-            key={attendee.player.id}
-            label={`${attendee.player.name} (${attendee.player.alias})`}
-            value={attendee.player.id}
-          />
-        ))}
-      </Picker>
+          {/* Player A2 */}
+          <Text style={styles.label}>Player A2 {playerNameA2 !== '' && (
+                                                               <Text style={styles.selectedPlayerText}>
+                                                                 : {playerNameA2} - Level {playerLevelA2}
+                                                               </Text>
+                                                             )}</Text>
+          {!showSearchA2 ? (
+            <TouchableOpacity style={styles.button} onPress={() => setShowSearchA2(true)}>
+              <Text style={styles.buttonText}>Search Player A2</Text>
+            </TouchableOpacity>
+            ) : (
+            <>
+              <TextInput
+                style={styles.input}
+                placeholder="Search Player A2"
+                value={searchQueryA2}
+                onChangeText={setSearchQueryA2}
+              />
+              {renderPlayerList(filteredAttendeesA2, showAllPlayersA2, setShowAllPlayersA2, handleSelectPlayerA2)}
 
-        <Text style={styles.label}>Player A2 Level</Text>
-        <Text style={styles.levelText}>
-          {attendees.find(att => att.player.id === parseInt(playerIdA2))?.player.level || 'N/A'}
-        </Text>
+            </>
+          )}
 
-      <Text style={styles.label}>Player B1</Text>
-      <Picker
-        selectedValue={playerIdB1}
-        style={styles.input}
-        onValueChange={(itemValue) => setPlayerIdB1(itemValue)}
-      >
-       <Picker.Item label="Select Player B1" value="" />
-        {attendees.map((attendee) => (
-          <Picker.Item
-            key={attendee.player.id}
-            label={`${attendee.player.name} (${attendee.player.alias})`}
-            value={attendee.player.id}
-          />
-        ))}
-      </Picker>
 
-        <Text style={styles.label}>Player B1 Level</Text>
-        <Text style={styles.levelText}>
-          {attendees.find(att => att.player.id === parseInt(playerIdB1))?.player.level || 'N/A'}
-        </Text>
 
-      <Text style={styles.label}>Player B2</Text>
-      <Picker
-        selectedValue={playerIdB2}
-        style={styles.input}
-        onValueChange={(itemValue) => setPlayerIdB2(itemValue)}
-      >
+          {/* Player B1 */}
+          <Text style={styles.label}>Player B1 {playerNameB1 !== '' && (
+                                                               <Text style={styles.selectedPlayerText}>
+                                                                 : {playerNameB1} - Level {playerLevelB1}
+                                                               </Text>
+                                                             )}</Text>
+          {!showSearchB1 ? (
+            <TouchableOpacity style={styles.button} onPress={() => setShowSearchB1(true)}>
+              <Text style={styles.buttonText}>Search Player B1</Text>
+            </TouchableOpacity>          ) : (
+            <>
+              <TextInput
+                style={styles.input}
+                placeholder="Search Player B1"
+                value={searchQueryB1}
+                onChangeText={setSearchQueryB1}
+              />
+              {renderPlayerList(filteredAttendeesB1, showAllPlayersB1, setShowAllPlayersB1, handleSelectPlayerB1)}
 
-       <Picker.Item label="Select Player B2" value="" />
-        {attendees.map((attendee) => (
-          <Picker.Item
-            key={attendee.player.id}
-            label={`${attendee.player.name} (${attendee.player.alias})`}
-            value={attendee.player.id}
-          />
-        ))}
-      </Picker>
+            </>
+          )}
 
-        <Text style={styles.label}>Player B2 Level</Text>
-        <Text style={styles.levelText}>
-          {attendees.find(att => att.player.id === parseInt(playerIdB2))?.player.level || 'N/A'}
-        </Text>
+          {/* Player B2 */}
+          <Text style={styles.label}>Player B2 {playerNameB2 !== '' && (
+                                                               <Text style={styles.selectedPlayerText}>
+                                                                 : {playerNameB2} - Level {playerLevelB2}
+                                                               </Text>
+                                                             )}</Text>
+          {!showSearchB2 ? (
+            <TouchableOpacity style={styles.button} onPress={() => setShowSearchB2(true)}>
+              <Text style={styles.buttonText}>Search Player B2</Text>
+            </TouchableOpacity>
+            ) : (
+            <>
+              <TextInput
+                style={styles.input}
+                placeholder="Search Player B2"
+                value={searchQueryB2}
+                onChangeText={setSearchQueryB2}
+              />
+              {renderPlayerList(filteredAttendeesB2, showAllPlayersB2, setShowAllPlayersB2, handleSelectPlayerB2)}
 
-        <Text style={styles.label}>Start Time</Text>
+            </>
+          )}
+
+        <Text style={styles.label}>Start Time {formattedStartTime !== null ? <Text style={styles.timeText}>: {formattedStartTime}</Text> : null}</Text>
         <View>
-          <Button title="Select Start Time" onPress={() => setShowTimePicker(true)} />
-          <Text style={styles.timeText}>{formattedStartTime}</Text>
+            <TouchableOpacity style={styles.button} onPress={() => setShowTimePicker(true)}>
+              <Text style={styles.buttonText}>Select Start Time</Text>
+            </TouchableOpacity>
         </View>
         {showTimePicker && (
           <DateTimePicker
@@ -286,14 +419,12 @@ const AddMatchScreen = ({ navigation, route }) => {
 
       <Button title="Save Match" onPress={handleSaveMatch} />
     </View>
-    </ScrollView>
+    }
+    />
   );
 };
 
 const styles = StyleSheet.create({
-  scrollContainer: {
-    flex: 1,
-  },
   container: {
     flex: 1,
     padding: 16,
@@ -302,6 +433,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 4,
+    marginTop: 8
   },
   input: {
     borderWidth: 1,
@@ -310,16 +442,16 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     borderRadius: 4,
   },
-  levelText: {
-    padding: 8,
-    marginBottom: 16,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 4,
+  selectedPlayerText: {
     fontSize: 16,
+    color: '#555',
+    marginVertical: 8,
+    fontStyle: 'italic'
   },
   timeText: {
     fontSize: 16,
     marginVertical: 8,
+    fontWeight: 'normal'
   },
   loadingContainer: {
     flex: 1,
@@ -330,6 +462,36 @@ const styles = StyleSheet.create({
     color: 'red',
     fontSize: 16,
   },
+  listItem: {
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  searchResultList: {
+    marginBottom: 16,
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 4,
+  },
+  buttonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  clickMoreText: {
+    color: 'blue',
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  button: {
+    backgroundColor: '#555555',
+    padding: 12,
+    marginVertical: 8,
+    borderRadius: 4,
+    alignItems: 'center',
+  },
+
+
 });
 
 export default AddMatchScreen;

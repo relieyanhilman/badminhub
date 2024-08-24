@@ -587,10 +587,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: 8,
   },
-  buttonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
   filterContainer: {
     marginBottom: 16,
     backgroundColor: '#fff',
