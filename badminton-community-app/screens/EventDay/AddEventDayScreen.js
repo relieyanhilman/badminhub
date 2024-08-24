@@ -49,7 +49,7 @@ const AddEventDayScreen = ({ navigation, route }) => {
 
       if (response.ok) {
         Alert.alert('Success', 'Event day added successfully');
-        navigation.navigate('EventDayList', {eventId, refresh: true}); // Kembali ke EventDayListScreen
+        navigation.navigate('EventDayList', {eventId, refresh: true});
       } else {
         let errorMessage = data.message || 'Failed to add event day';
         if (response.status === 401) {

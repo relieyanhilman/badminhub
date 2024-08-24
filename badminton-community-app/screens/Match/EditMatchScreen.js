@@ -16,18 +16,14 @@ const EditMatchScreen = ({ route, navigation }) => {
   const [error, setError] = useState(null);
 
   const [courtId, setCourtId] = useState(match.court_id.toString());
-  const [playerIdA1, setPlayerIdA1] = useState('');
-  const [playerLevelA1, setPlayerLevelA1] = useState('A');
-  const [playerIdA2, setPlayerIdA2] = useState('');
-  const [playerLevelA2, setPlayerLevelA2] = useState('A');
-  const [playerIdB1, setPlayerIdB1] = useState('');
-  const [playerLevelB1, setPlayerLevelB1] = useState('A');
-  const [playerIdB2, setPlayerIdB2] = useState('');
-  const [playerLevelB2, setPlayerLevelB2] = useState('A');
+  const [playerIdA1, setPlayerIdA1] = useState(match.player_id_a1.toString());
+  const [playerIdA2, setPlayerIdA2] = useState(match.player_id_a2.toString());
+  const [playerIdB1, setPlayerIdB1] = useState(match.player_id_b1.toString());
+  const [playerIdB2, setPlayerIdB2] = useState(match.player_id_b2.toString());
   const [startTime, setStartTime] = useState(new Date(`2024-01-01T${match.start_time}`));
-  const [endTime, setEndTime] = useState(match.end_time ? new Date(`2024-01-01T${match.end_time}`) : "");
+  const [endTime, setEndTime] = useState(match.end_time ?  new Date(`2024-01-01T${match.end_time}`) : new Date());
   const [score, setScore] = useState(match.score || '');
-  const [shuttlecockUsed, setShuttlecockUsed] = useState(match.shuttlecock_used?.toString() || '');
+  const [shuttlecockUsed, setShuttlecockUsed] = useState(match.shuttlecock_used?.toString() || 0);
   const [note, setNote] = useState(match.note || '');
   const [showStartTimePicker, setShowStartTimePicker] = useState(false);
   const [showEndTimePicker, setShowEndTimePicker] = useState(false);
@@ -97,8 +93,16 @@ const EditMatchScreen = ({ route, navigation }) => {
       Alert.alert('Error', 'Please fill in all required fields.');
       return;
     }
+
+    if (endTime && endTime < startTime) {
+      Alert.alert('Error', 'End time cannot be earlier than start time.');
+      return;
+    }
+
     try {
       const token = await SecureStore.getItemAsync('userToken');
+      console.log("MATCH START TIME", startTime)
+      console.log("MATCH END TIME", endTime)
       const response = await fetch('https://api.pbbedahulu.my.id/mabar/match/update', {
         method: 'POST',
         headers: {
@@ -133,6 +137,7 @@ const EditMatchScreen = ({ route, navigation }) => {
         Alert.alert('Error', result.message || 'Failed to update match.');
       }
     } catch (error) {
+      console.log(error)
       Alert.alert('Error', 'An error occurred while updating the match.');
     }
   };
@@ -152,9 +157,9 @@ const EditMatchScreen = ({ route, navigation }) => {
   };
 
   const formattedStartTime = `${startTime.getHours().toString().padStart(2, '0')}:${startTime.getMinutes().toString().padStart(2, '0')}:${startTime.getSeconds().toString().padStart(2, '0')}`;
-  const formattedEndTime = endTime
-  ? `${endTime.getHours().toString().padStart(2, '0')}:${endTime.getMinutes().toString().padStart(2, '0')}:${endTime.getSeconds().toString().padStart(2, '0')}`
-  : "";
+  const formattedEndTime = endTime instanceof Date
+      ? `${endTime.getHours().toString().padStart(2, '0')}:${endTime.getMinutes().toString().padStart(2, '0')}:${endTime.getSeconds().toString().padStart(2, '0')}`
+      : new Date();
 
   if (loading || courtLoading) {
     return (
@@ -183,7 +188,7 @@ const EditMatchScreen = ({ route, navigation }) => {
           onValueChange={(itemValue) => setCourtId(itemValue)}
         >
           {courts.map((court) => (
-            <Picker.Item key={court.id} label={court.name} value={court.id} />
+            <Picker.Item key={court.id} label={court.name} value={court.id.toString()} />
           ))}
         </Picker>
 
@@ -197,8 +202,8 @@ const EditMatchScreen = ({ route, navigation }) => {
           {attendees.map((attendee) => (
             <Picker.Item
               key={attendee.player.id}
-              label={`${attendee.player.name} (${attendee.player.alias})`}
-              value={attendee.player.id}
+              label={`${attendee.player.name} (${attendee.player.alias}) - Level: ${attendee.player_level}`}
+              value={attendee.player.id.toString()}
             />
           ))}
         </Picker>
@@ -218,8 +223,8 @@ const EditMatchScreen = ({ route, navigation }) => {
           {attendees.map((attendee) => (
             <Picker.Item
               key={attendee.player.id}
-              label={`${attendee.player.name} (${attendee.player.alias})`}
-              value={attendee.player.id}
+              label={`${attendee.player.name} (${attendee.player.alias}) - Level: ${attendee.player_level}`}
+              value={attendee.player.id.toString()}
             />
           ))}
         </Picker>
@@ -239,8 +244,8 @@ const EditMatchScreen = ({ route, navigation }) => {
           {attendees.map((attendee) => (
             <Picker.Item
               key={attendee.player.id}
-              label={`${attendee.player.name} (${attendee.player.alias})`}
-              value={attendee.player.id}
+              label={`${attendee.player.name} (${attendee.player.alias}) - Level: ${attendee.player_level}`}
+              value={attendee.player.id.toString()}
             />
           ))}
         </Picker>
@@ -260,8 +265,8 @@ const EditMatchScreen = ({ route, navigation }) => {
           {attendees.map((attendee) => (
             <Picker.Item
               key={attendee.player.id}
-              label={`${attendee.player.name} (${attendee.player.alias})`}
-              value={attendee.player.id}
+              label={`${attendee.player.name} (${attendee.player.alias}) - Level: ${attendee.player_level}`}
+              value={attendee.player.id.toString()}
             />
           ))}
         </Picker>
@@ -288,11 +293,11 @@ const EditMatchScreen = ({ route, navigation }) => {
         <Text style={styles.label}>End Time</Text>
         <View>
           <Button title="Select End Time" onPress={() => setShowEndTimePicker(true)} />
-          <Text style={styles.timeText}>{formattedEndTime || 'Not Set'}</Text>
+          <Text style={styles.timeText}>{formattedEndTime}</Text>
         </View>
         {showEndTimePicker && (
           <DateTimePicker
-            value={endTime || new Date()}
+            value={endTime}
             mode="time"
             display="default"
             onChange={onChangeEndTime}

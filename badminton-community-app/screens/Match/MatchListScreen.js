@@ -38,7 +38,12 @@ const MatchListScreen = ({ navigation, route }) => {
         const result = await response.json();
 
         if (result.success) {
-          setMatches(result.data.matches);
+            const sortedMatches = result.data.matches.sort((a, b) => {
+              const dateA = new Date(`2024-01-01T${a.start_time}`);
+              const dateB = new Date(`2024-01-01T${b.start_time}`);
+              return dateB - dateA; // Sort by newest start_time first
+            });
+          setMatches(sortedMatches);
         } else {
           setError(result.message || 'Failed to retrieve data');
         }
@@ -51,8 +56,7 @@ const MatchListScreen = ({ navigation, route }) => {
 
 
   const handleAddMatch = () => {
-    matches_length = matches.length
-    navigation.navigate('AddMatch', {matches_length});
+    navigation.navigate('AddMatch', {dayId});
   };
 
   const handleEditMatch = (match) => {
@@ -103,13 +107,13 @@ const MatchListScreen = ({ navigation, route }) => {
             </View>
       </View>
 
-      <Text style={styles.timeText}>Start Time: {item.start_time}</Text>
-      {item.end_time !== "00:00:00" && <Text style={styles.text}>End Time: {item.end_time}</Text>}
+      {item.start_time !== "" ? <Text style={styles.timeText}>Start Time: {item.start_time}</Text> : null}
+      <Text style={styles.text}>End Time: {item.end_time !== null ? item.end_time : "Not Set" }</Text>
 
-      {item.end_time !== "00:00:00" && <Text style={styles.text}>Duration: {item.duration}</Text>}
+      {item.duration == "0 minutes" ? null : <Text style={styles.text}>Duration: {item.duration}</Text>}
       <Text style={styles.scoreText}>Score: {item.score || 'Not Set'}</Text>
-      {item.shuttlecock_used && <Text style={styles.text}>Shuttlecocks Used: {item.shuttlecock_used}</Text>}
-      {item.note && <Text style={styles.text}>Note: {item.note}</Text>}
+      <Text style={styles.text}>Shuttlecocks Used: {item.shuttlecock_used || item.shuttlecock_used === 0? item.shuttlecock_used : "Not Set"}</Text>
+      {item.note ? <Text style={styles.text}>Note: {item.note}</Text> : null}
       <View style={styles.itemButtons}>
         <Button title="Edit" onPress={() => handleEditMatch(item)} />
       </View>

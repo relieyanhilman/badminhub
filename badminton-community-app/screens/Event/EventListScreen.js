@@ -94,7 +94,7 @@ const EventListScreen = ({ navigation, route }) => {
 
   const handleEventPress = (eventId, eventName, eventHallId) => {
     updateEvent(eventId, eventName, eventHallId)
-    navigation.navigate('EventDayList');
+    navigation.navigate('EventDay');
   };
 
   const handleAddEvent = () => {

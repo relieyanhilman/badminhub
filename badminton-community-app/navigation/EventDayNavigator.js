@@ -5,14 +5,13 @@ import { createMaterialTopTabNavigator } from '@react-navigation/material-top-ta
 import { createStackNavigator } from '@react-navigation/stack';
 import { EventContext } from '../EventContext';
 
-import PlayerListScreen from '../screens/Player/PlayerListScreen.js';
-import MatchListScreen from '../screens/Match/MatchListScreen.js'
+import EventDayListScreen from '../screens/EventDay/EventDayListScreen';
+import EventPlayerScreen from '../screens/EventDay/EventPlayerScreen';
 
 const Tab = createMaterialTopTabNavigator();
 const Stack = createStackNavigator();
 
-const EventDetailNavigator = ({navigation, route}) => {
-  const {dayId, eventDayName} = route.params;
+const EventDayNavigator = ({navigation, route}) => {
   const {eventName} = useContext(EventContext)
 
   useEffect(() => {
@@ -22,27 +21,22 @@ const EventDetailNavigator = ({navigation, route}) => {
           <Text style={styles.headerTitle} numberOfLines={1} ellipsizeMode="tail">
             {eventName}
           </Text>
-          <Text style={styles.headerSubtitle} numberOfLines={1} ellipsizeMode="tail">
-            {eventDayName}
-          </Text>
         </View>
       ),
     });
-  }, [navigation, eventName, eventDayName]);
+  }, [navigation, eventName]);
 
   return (
     <Tab.Navigator>
       <Tab.Screen
-        name="MatchList"
-        component={MatchListScreen}
-        options={{ title: 'Match List', headerShown: false }} // Menyembunyikan header Stack.Navigator
-        initialParams={{ dayId }}
+        name="EventDayList"
+        component={EventDayListScreen}
+        options={{ title: 'Event Days' }}
       />
       <Tab.Screen
-        name="PlayerList"
-        component={PlayerListScreen}
-        options={{ title: 'Player List', headerShown: false  }}
-        initialParams={{ dayId }}
+        name="EventPlayers"
+        component={EventPlayerScreen }
+        options={{ title: 'Event Players' }}
       />
     </Tab.Navigator>
   );
@@ -58,11 +52,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
   },
-  headerSubtitle: {
-    fontSize: 14,
-    textAlign: 'center',
-    color: '#666',
-  },
 });
 
-export default EventDetailNavigator;
+export default EventDayNavigator;

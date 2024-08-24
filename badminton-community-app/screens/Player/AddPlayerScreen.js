@@ -114,7 +114,15 @@ const AddPlayerScreen = ({ navigation, route }) => {
       />
 
       <Text style={styles.label}>Gender</Text>
-      <Picker selectedValue={gender} onValueChange={setGender} style={styles.input}>
+      <Picker
+      selectedValue={gender}
+      onValueChange={() => {
+           setGender;
+           contactRef.current.focus()
+        }
+      }
+      ref={genderRef}
+      style={styles.input}>
         <Picker.Item label="Select Gender" value="" />
         <Picker.Item label="Male" value="M" />
         <Picker.Item label="Female" value="F" />
@@ -137,7 +145,15 @@ const AddPlayerScreen = ({ navigation, route }) => {
       />
 
       <Text style={styles.label}>Level</Text>
-      <Picker selectedValue={level} onValueChange={setLevel} style={styles.input}>
+      <Picker
+      selectedValue={level}
+      onValueChange={() => {
+           setLevel;
+           ageRangeRef.current.focus()
+        }
+      }
+      ref={levelRef}
+      style={styles.input}>
         <Picker.Item label="Select Level" value="" />
         <Picker.Item label="Level A" value="A" />
         <Picker.Item label="Level B" value="B" />
@@ -145,7 +161,11 @@ const AddPlayerScreen = ({ navigation, route }) => {
       </Picker>
 
       <Text style={styles.label}>Age Range</Text>
-      <Picker selectedValue={ageRange} onValueChange={setAgeRange} style={styles.input}>
+      <Picker
+      selectedValue={ageRange}
+      onValueChange={setAgeRange}
+      ref={ageRangeRef}
+      style={styles.input}>
         <Picker.Item label="Select Age Range" value="" />
         <Picker.Item label="15-20" value="15-20" />
         <Picker.Item label="21-30" value="21-30" />
