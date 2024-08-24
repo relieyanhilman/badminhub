@@ -45,9 +45,9 @@ const AddMatchScreen = ({ navigation, route }) => {
       });
 
       const result = await response.json();
-
       if (result.success) {
         setAttendees(result.data.attendees);
+
       } else {
         setError(result.message || 'Failed to retrieve attendees data');
       }

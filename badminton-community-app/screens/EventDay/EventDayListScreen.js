@@ -6,7 +6,7 @@ import { EventContext } from '../../EventContext';
 import * as SecureStore from 'expo-secure-store';
 
 const EventDayListScreen = ({ navigation, route }) => {
-  const {eventId, eventName} = useContext(EventContext)
+  const {eventId} = useContext(EventContext)
   const [eventDays, setEventDays] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -103,7 +103,6 @@ const EventDayListScreen = ({ navigation, route }) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.eventName}>{eventName}</Text>
       <Button title="Add Event Day" onPress={() => navigation.navigate('AddEventDay', { eventId })} />
       <FlatList
         data={eventDays}
@@ -134,13 +133,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: 'red',
     marginBottom: 16,
-  },
-  eventName: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 16,
-    textAlign: 'center',
-    color: '#333',
   },
   itemContainer: {
     flexDirection: 'row',
