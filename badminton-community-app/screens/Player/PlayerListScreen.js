@@ -299,7 +299,7 @@ const PlayerListScreen = ({ navigation, route }) => {
               <Text style={styles.text}>Level: {item.player_level}</Text>
               <Text style={styles.text}>Arrival Time: {new Date(item.player_arrival_time).toLocaleString()}</Text>
               <Text style={styles.text}>Matches Played: {item.match_played}</Text>
-              <Text style={styles.text}>Shuttlecock Used: {item.shuttlecock_used}</Text>
+              <Text style={styles.text}>Shuttlecock Used: {item.shuttlecock_used === null? "0" : item.shuttlecock_used}</Text>
               <Text style={styles.text}>Payment Status: {item.payment_status}</Text>
             </>
         )}

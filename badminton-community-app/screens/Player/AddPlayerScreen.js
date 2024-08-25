@@ -9,10 +9,10 @@ const AddPlayerScreen = ({ navigation, route }) => {
 
   const [name, setName] = useState('');
   const [alias, setAlias] = useState('');
-  const [gender, setGender] = useState('M');
+  const [gender, setGender] = useState('');
   const [contact, setContact] = useState('');
-  const [level, setLevel] = useState('A');
-  const [ageRange, setAgeRange] = useState('15-20');
+  const [level, setLevel] = useState('');
+  const [ageRange, setAgeRange] = useState('');
   const [loading, setLoading] = useState(false);
 
   const aliasRef = useRef(null);
@@ -116,8 +116,8 @@ const AddPlayerScreen = ({ navigation, route }) => {
       <Text style={styles.label}>Gender</Text>
       <Picker
       selectedValue={gender}
-      onValueChange={() => {
-           setGender;
+      onValueChange={(value) => {
+           setGender(value);
            contactRef.current.focus()
         }
       }
@@ -147,8 +147,8 @@ const AddPlayerScreen = ({ navigation, route }) => {
       <Text style={styles.label}>Level</Text>
       <Picker
       selectedValue={level}
-      onValueChange={() => {
-           setLevel;
+      onValueChange={(value) => {
+           setLevel(value);
            ageRangeRef.current.focus()
         }
       }
