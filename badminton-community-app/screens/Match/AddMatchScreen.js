@@ -1,10 +1,32 @@
 // Match/AddMatchScreen.js
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useMemo, useCallback } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Alert, ActivityIndicator, ScrollView, FlatList, TouchableOpacity} from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { EventContext } from '../../EventContext';
 import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
+
+// Komponen untuk List Pemain
+const PlayerList = React.memo(({ filteredAttendees, showAllPlayers, setShowAllPlayers, handleSelectPlayer }) => (
+  <>
+    <FlatList
+      data={filteredAttendees}
+      keyExtractor={(item) => item.player.id.toString()}
+      renderItem={({ item }) => (
+        <TouchableOpacity onPress={() => handleSelectPlayer(item.player.id)}>
+          <Text style={styles.listItem}>{`${item.player.name} (${item.player.alias}) - Level ${item.player.level}`}</Text>
+        </TouchableOpacity>
+      )}
+      nestedScrollEnabled={true}
+      style={showAllPlayers ? styles.searchResultList : [{ maxHeight: 200 }, styles.searchResultList]}
+    />
+    {!showAllPlayers && filteredAttendees.length > 3 && (
+      <TouchableOpacity onPress={() => setShowAllPlayers(true)}>
+        <Text style={styles.clickMoreText}>Click More</Text>
+      </TouchableOpacity>
+    )}
+  </>
+));
 
 const AddMatchScreen = ({ navigation, route }) => {
   const {eventHallId} = useContext(EventContext)
@@ -18,16 +40,16 @@ const AddMatchScreen = ({ navigation, route }) => {
   const [courtId, setCourtId] = useState('');
   const [playerIdA1, setPlayerIdA1] = useState('');
   const [playerNameA1, setPlayerNameA1] = useState(''); // State untuk menyimpan nama pemain A1
-  const [playerLevelA1, setPlayerLevelA1] = useState('A');
+  const [playerLevelA1, setPlayerLevelA1] = useState('');
   const [playerIdA2, setPlayerIdA2] = useState('');
   const [playerNameA2, setPlayerNameA2] = useState(''); // State untuk menyimpan nama pemain A2
-  const [playerLevelA2, setPlayerLevelA2] = useState('A');
+  const [playerLevelA2, setPlayerLevelA2] = useState('');
   const [playerIdB1, setPlayerIdB1] = useState('');
   const [playerNameB1, setPlayerNameB1] = useState(''); // State untuk menyimpan nama pemain B1
-  const [playerLevelB1, setPlayerLevelB1] = useState('A');
+  const [playerLevelB1, setPlayerLevelB1] = useState('');
   const [playerIdB2, setPlayerIdB2] = useState('');
   const [playerNameB2, setPlayerNameB2] = useState(''); // State untuk menyimpan nama pemain B2
-  const [playerLevelB2, setPlayerLevelB2] = useState('A');
+  const [playerLevelB2, setPlayerLevelB2] = useState('');
   const [startTime, setStartTime] = useState(new Date());
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [note, setNote] = useState('');
@@ -202,44 +224,25 @@ const AddMatchScreen = ({ navigation, route }) => {
     }
   };
 
-  const formattedStartTime = `${startTime.getHours().toString().padStart(2, '0')}:${startTime.getMinutes().toString().padStart(2, '0')}:${startTime.getSeconds().toString().padStart(2, '0')}`;
+  const formattedStartTime = useMemo(() => {
+    return `${startTime.getHours().toString().padStart(2, '0')}:${startTime.getMinutes()
+      .toString()
+      .padStart(2, '0')}:${startTime.getSeconds().toString().padStart(2, '0')}`;
+  }, [startTime]);
 
-  const handleSelectPlayerA1 = (playerId) => {
-    const selectedPlayer = attendees.find(att => att.player.id === playerId);
-    setPlayerIdA1(playerId);
-    setPlayerNameA1(selectedPlayer.player.name); // Menyimpan nama pemain A1 yang dipilih
-    setPlayerLevelA1(selectedPlayer.player.level)
-    setSearchQueryA1('');
-    setShowSearchA1(false);
-    setShowAllPlayersA1(false);
-  };
 
-  const handleSelectPlayerA2 = (playerId) => {
-    const selectedPlayer = attendees.find(att => att.player.id === playerId);
-    setPlayerIdA2(playerId);
-    setPlayerNameA2(selectedPlayer.player.name); // Menyimpan nama pemain A2 yang dipilih
-    setPlayerLevelA2(selectedPlayer.player.level)
-    setSearchQueryA2('');
-    setShowSearchA2(false);
-  };
-
-  const handleSelectPlayerB1 = (playerId) => {
-    const selectedPlayer = attendees.find(att => att.player.id === playerId);
-    setPlayerIdB1(playerId);
-    setPlayerNameB1(selectedPlayer.player.name); // Menyimpan nama pemain B1 yang dipilih
-    setPlayerLevelB1(selectedPlayer.player.level)
-    setSearchQueryB1('');
-    setShowSearchB1(false);
-  };
-
-  const handleSelectPlayerB2 = (playerId) => {
-    const selectedPlayer = attendees.find(att => att.player.id === playerId);
-    setPlayerIdB2(playerId);
-    setPlayerNameB2(selectedPlayer.player.name); // Menyimpan nama pemain B1 yang dipilih
-    setPlayerLevelB2(selectedPlayer.player.level)
-    setSearchQueryB2('');
-    setShowSearchB2(false);
-  };
+  const handleSelectPlayer = useCallback(
+    (playerId, setPlayerId, setPlayerName, setPlayerLevel, setSearchQuery, setShowSearch, setShowAllPlayers) => {
+      const selectedPlayer = attendees.find((att) => att.player.id === playerId);
+      setPlayerId(playerId);
+      setPlayerName(selectedPlayer.player.name);
+      setPlayerLevel(selectedPlayer.player.level);
+      setSearchQuery('');
+      setShowSearch(false);
+      setShowAllPlayers(false);
+    },
+    [attendees]
+  );
 
   if (loading || courtLoading ) {
     return (
@@ -257,27 +260,6 @@ const AddMatchScreen = ({ navigation, route }) => {
       </View>
     );
   }
-
-  const renderPlayerList = (filteredAttendees, showAllPlayers, setShowAllPlayers, handleSelectPlayer) => (
-    <>
-      <FlatList
-        data={filteredAttendees}
-        keyExtractor={(item) => item.player.id.toString()}
-        renderItem={({ item }) => (
-          <TouchableOpacity onPress={() => handleSelectPlayer(item.player.id)}>
-            <Text style={styles.listItem}>{`${item.player.name} (${item.player.alias}) - Level ${item.player.level}`}</Text>
-          </TouchableOpacity>
-        )}
-        nestedScrollEnabled={true}
-        style={showAllPlayers ? styles.searchResultList : [{ maxHeight: 200 }, styles.searchResultList]}
-      />
-      {!showAllPlayers && filteredAttendees.length > 3 && (
-        <TouchableOpacity onPress={() => setShowAllPlayers(true)}>
-          <Text style={styles.clickMoreText}>Click More</Text>
-        </TouchableOpacity>
-      )}
-    </>
-  );
 
   return (
     <FlatList
@@ -319,7 +301,14 @@ const AddMatchScreen = ({ navigation, route }) => {
                 value={searchQueryA1}
                 onChangeText={setSearchQueryA1}
               />
-              {renderPlayerList(filteredAttendeesA1, showAllPlayersA1, setShowAllPlayersA1, handleSelectPlayerA1)}
+              <PlayerList
+                filteredAttendees={filteredAttendeesA1}
+                showAllPlayers={showAllPlayersA1}
+                setShowAllPlayers={setShowAllPlayersA1}
+                handleSelectPlayer={(playerId) =>
+                  handleSelectPlayer(playerId, setPlayerIdA1, setPlayerNameA1, setPlayerLevelA1, setSearchQueryA1, setShowSearchA1, setShowAllPlayersA1)
+                }
+              />
             </>
           )}
 
@@ -342,8 +331,14 @@ const AddMatchScreen = ({ navigation, route }) => {
                 value={searchQueryA2}
                 onChangeText={setSearchQueryA2}
               />
-              {renderPlayerList(filteredAttendeesA2, showAllPlayersA2, setShowAllPlayersA2, handleSelectPlayerA2)}
-
+              <PlayerList
+                filteredAttendees={filteredAttendeesA2}
+                showAllPlayers={showAllPlayersA2}
+                setShowAllPlayers={setShowAllPlayersA2}
+                handleSelectPlayer={(playerId) =>
+                  handleSelectPlayer(playerId, setPlayerIdA2, setPlayerNameA2, setPlayerLevelA2, setSearchQueryA2, setShowSearchA2, setShowAllPlayersA2)
+                }
+              />
             </>
           )}
 
@@ -366,8 +361,14 @@ const AddMatchScreen = ({ navigation, route }) => {
                 value={searchQueryB1}
                 onChangeText={setSearchQueryB1}
               />
-              {renderPlayerList(filteredAttendeesB1, showAllPlayersB1, setShowAllPlayersB1, handleSelectPlayerB1)}
-
+              <PlayerList
+                filteredAttendees={filteredAttendeesB1}
+                showAllPlayers={showAllPlayersB1}
+                setShowAllPlayers={setShowAllPlayersB1}
+                handleSelectPlayer={(playerId) =>
+                  handleSelectPlayer(playerId, setPlayerIdB1, setPlayerNameB1, setPlayerLevelB1, setSearchQueryB1, setShowSearchB1, setShowAllPlayersB1)
+                }
+              />
             </>
           )}
 
@@ -389,7 +390,14 @@ const AddMatchScreen = ({ navigation, route }) => {
                 value={searchQueryB2}
                 onChangeText={setSearchQueryB2}
               />
-              {renderPlayerList(filteredAttendeesB2, showAllPlayersB2, setShowAllPlayersB2, handleSelectPlayerB2)}
+              <PlayerList
+                filteredAttendees={filteredAttendeesB2}
+                showAllPlayers={showAllPlayersB2}
+                setShowAllPlayers={setShowAllPlayersB2}
+                handleSelectPlayer={(playerId) =>
+                  handleSelectPlayer(playerId, setPlayerIdB2, setPlayerNameB2, setPlayerLevelB2, setSearchQueryB2, setShowSearchB2, setShowAllPlayersB2)
+                }
+              />
 
             </>
           )}
