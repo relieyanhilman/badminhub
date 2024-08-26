@@ -148,68 +148,86 @@ const PlayerListScreen = ({ navigation, route }) => {
       setSearchQuery(query)
   };
 
-  const handleApplyPlayer = async (playerId) => {
-    if (applyingPlayerIds.includes(playerId)) {
+  const handleApplyPlayer = async (playerT) => {
+    if (applyingPlayerIds.includes(playerT.id)) {
       return; // Jika tombol sudah ditekan, tidak lakukan apa-apa
     }
 
-    setApplyingPlayerIds(prevState => [...prevState, playerId]); // Tandai bahwa pemain ini sedang diproses
+    Alert.alert(
+        "Apply Player Confirmation",
+        `Are you sure you want to apply ${playerT.name} (${playerT.alias}) to this event day?`,
+        [
+          {
+            text: "Cancel",
+            style: "cancel",
+          },
+          {
+            text: "Yes",
+            onPress: async () => {
+                setApplyingPlayerIds(prevState => [...prevState, playerT.id]); // Tandai bahwa pemain ini sedang diproses
 
-    try {
-      const token = await SecureStore.getItemAsync('userToken');
-      if (!token) {
-        throw new Error('User token not found');
-      }
+                try {
+                  const token = await SecureStore.getItemAsync('userToken');
+                  if (!token) {
+                    throw new Error('User token not found');
+                  }
 
-      const response = await fetch(`https://api.pbbedahulu.my.id/mabar/day/detail/create`, {
-        method: 'POST',
-        headers: {
-          'Authorization': token,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          open_mabar_day_id: dayId,
-          player_id: playerId,
-          payment_status: 'unpaid',
-        }),
-      });
+                  const response = await fetch(`https://api.pbbedahulu.my.id/mabar/day/detail/create`, {
+                    method: 'POST',
+                    headers: {
+                      'Authorization': token,
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                      open_mabar_day_id: dayId,
+                      player_id: playerT.id,
+                      payment_status: 'unpaid',
+                    }),
+                  });
 
-      if (response.ok) {
-          //Temukan pemain dari API List Player Mabar Day
-          const response2 = await fetch(`https://api.pbbedahulu.my.id/mabar/day/${dayId}`, {
-            method: 'GET',
-            headers: {
-              'Authorization': token,
-              'Content-Type': 'application/json',
-            },
-          });
+                  if (response.ok) {
+                      //Temukan pemain dari API List Player Mabar Day
+                      const response2 = await fetch(`https://api.pbbedahulu.my.id/mabar/day/${dayId}`, {
+                        method: 'GET',
+                        headers: {
+                          'Authorization': token,
+                          'Content-Type': 'application/json',
+                        },
+                      });
 
-          const data2 = await response2.json()
+                      const data2 = await response2.json()
 
-          if(response2.ok){
-            const appliedPlayer = data2.data.attendees.filter(player => player.player_id === playerId)
-            const updatedPlayers = [...players, { ...appliedPlayer[0], isMasterPlayer: false }];
-            const updatedMasterPlayers = masterPlayers.filter(player => player.id !== playerId);
+                      if(response2.ok){
+                        Alert.alert('Success', `Player ${playerT.name} (${playerT.alias}) applied successfully.`, [{ text: 'OK' }]);
+                        const appliedPlayer = data2.data.attendees.filter(player => player.player_id === playerT.id)
+                        const updatedPlayers = [...players, { ...appliedPlayer[0], isMasterPlayer: false }];
+                        const updatedMasterPlayers = masterPlayers.filter(player => player.id !== playerT.id);
 
-            setPlayers(updatedPlayers);
-            setMasterPlayers(updatedMasterPlayers);
+                        setPlayers(updatedPlayers);
+                        setMasterPlayers(updatedMasterPlayers);
 
-            applyFiltersAndSearch(updatedPlayers, updatedMasterPlayers);
-          }else{
-            const data = await response.json();
-            Alert.alert('Error', data.message || 'Failed to get new mabar day player');
+                        applyFiltersAndSearch(updatedPlayers, updatedMasterPlayers);
+                      }else{
+                        const data = await response.json();
+                        Alert.alert('Error', data.message || 'Failed to get new mabar day player');
+                      }
+                  } else {
+                    const data = await response.json();
+                    Alert.alert('Error', data.message || 'Failed to apply player');
+                  }
+                } catch (err) {
+                  console.log(err);
+                  Alert.alert('Error', 'An error occurred while applying player');
+                }finally{
+                  setApplyingPlayerIds(prevState => prevState.filter(id => id !== playerT.id)); // Selesai, hilangkan dari state
+                }
+            }
           }
-      } else {
-        const data = await response.json();
-        Alert.alert('Error', data.message || 'Failed to apply player');
-      }
-    } catch (err) {
-      console.log(err);
-      Alert.alert('Error', 'An error occurred while applying player');
-    }finally{
-      setApplyingPlayerIds(prevState => prevState.filter(id => id !== playerId)); // Selesai, hilangkan dari state
-    }
-  };
+        ]
+    )
+  }
+
+
 
   const applySearchFilter = (players, query) => {
     if (!query){
@@ -237,38 +255,58 @@ const PlayerListScreen = ({ navigation, route }) => {
     setFilteredPlayers(finalResult);
   };
 
-  const handlePaymentStatusChange = async (playerId) => {
-    setProcessingPlayerId(playerId);
-    try {
-      const token = await SecureStore.getItemAsync('userToken');
-      if (!token) throw new Error('User token not found');
+  const handlePaymentStatusChange = async (playerT) => {
 
-      const response = await fetch(`https://api.pbbedahulu.my.id/cashflow/paid`, {
-        method: 'POST',
-        headers: {
-          'Authorization': token,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ id: playerId }),
-      });
+    Alert.alert(
+        "Mark as Paid Confirmation",
+        `Are you sure you want to Mark as paid player ${playerT.player.name} (${playerT.player.alias}) ?`,
+        [
+          {
+            text: "Cancel",
+            style: "cancel",
+          },
+          {
+            text: "Yes",
+            onPress: async () => {
+                setProcessingPlayerId(playerT.id);
+                try {
+                  const token = await SecureStore.getItemAsync('userToken');
+                  if (!token) throw new Error('User token not found');
 
-      if (response.ok) {
-        setPlayers((prevPlayers) =>
-          prevPlayers.map((player) =>
-            player.id === playerId ? { ...player, payment_status: 'paid' } : player
-          )
-        );
-      } else {
-        const data = await response.json();
-        Alert.alert('Error', data.message || 'Failed to change payment status');
-      }
-    } catch (error) {
-      console.log(error);
-      Alert.alert('Error', 'An error occurred while changing payment status');
-    } finally {
-      setProcessingPlayerId(null);
-    }
-  };
+                  const response = await fetch(`https://api.pbbedahulu.my.id/cashflow/paid`, {
+                    method: 'POST',
+                    headers: {
+                      'Authorization': token,
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ id: playerT.id }),
+                  });
+
+                  if (response.ok) {
+                    Alert.alert('Success', `Paid payment status player ${playerT.player.name} (${playerT.player.alias}) marked successfully.`, [{ text: 'OK'}]);
+                    setPlayers((prevPlayers) =>
+                      prevPlayers.map((player) =>
+                        player.id === playerT.id ? { ...player, payment_status: 'paid' } : player
+                      )
+                    );
+                  } else {
+                    const data = await response.json();
+                    Alert.alert('Error', data.message || 'Failed to change payment status');
+                  }
+                } catch (error) {
+                  console.log(error);
+                  Alert.alert('Error', 'An error occurred while changing payment status');
+                } finally {
+                  setProcessingPlayerId(null);
+                }
+            }
+          }
+        ]
+    )
+
+  }
+
+
 
   const toggleExpand = (playerId) => {
     setExpandedPlayerIds(prevState =>
@@ -327,12 +365,12 @@ const PlayerListScreen = ({ navigation, route }) => {
             <Text style={styles.buttonText}>{isExpanded ? 'Hide Details' : 'Show Details'}</Text>
           </TouchableOpacity>
           {isMasterPlayer ? (
-            <Button title="Apply Player" onPress={() => handleApplyPlayer(item.id)} disabled={isApplying}/>
+            <Button title="Apply Player" onPress={() => handleApplyPlayer(item)} disabled={isApplying}/>
           ) : (
             <>
               <Button
                 title={isProcessing ? "Processing..." : "Mark as Paid"}
-                onPress={() => handlePaymentStatusChange(item.id)}
+                onPress={() => handlePaymentStatusChange(item)}
                 disabled={item.payment_status === "paid" || isProcessing}
                 color={item.payment_status === "paid" ? "green" : "orange"}
               />
