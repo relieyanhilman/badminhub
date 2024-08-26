@@ -93,7 +93,7 @@ const MatchListScreen = ({ navigation, route }) => {
               </View>
             </View>
 
-            <Text style={styles.vsText}>VS</Text>
+              <Text style={styles.vsText}>VS</Text>
 
             <View style={styles.teamContainer}>
               <View style={styles.playerContainer}>
@@ -107,13 +107,25 @@ const MatchListScreen = ({ navigation, route }) => {
             </View>
       </View>
 
-      {item.start_time !== "" ? <Text style={styles.timeText}>Start Time: {item.start_time}</Text> : null}
-      <Text style={styles.text}>End Time: {item.end_time !== null ? item.end_time : "Not Set" }</Text>
+      {item.score == null ? null : (      <View style={styles.vsContainer}>
+                                             <Text style={[styles.scoreText, {fontWeight: 'bold'}]}>Final Score</Text>
+                                             <Text style={styles.scoreText}>{item.score || 'N/A'}</Text>
+                                         </View>)}
 
-      {item.duration == "0 minutes" ? null : <Text style={styles.text}>Duration: {item.duration}</Text>}
-      <Text style={styles.scoreText}>Score: {item.score || 'Not Set'}</Text>
-      <Text style={styles.text}>Shuttlecocks Used: {item.shuttlecock_used || item.shuttlecock_used === 0? item.shuttlecock_used : "Not Set"}</Text>
-      {item.note ? <Text style={styles.text}>Note: {item.note}</Text> : null}
+
+      <View style={styles.matchDetailInfoContainer}>
+        <View style={styles.timeInfo}>
+          {item.start_time !== "" ? <Text style={styles.timeText}>Start Time: {item.start_time}</Text> : null}
+          <Text style={styles.text}>End Time: {item.end_time !== null ? item.end_time : "Not Set" }</Text>
+        </View>
+
+        <View style={styles.additionalInfo}>
+          {item.duration == "0 minutes" ? null : <Text style={styles.text}>Duration: {item.duration}</Text>}
+          <Text style={styles.text}>Shuttlecocks Used: {item.shuttlecock_used || item.shuttlecock_used === 0? item.shuttlecock_used : "Not Set"}</Text>
+          {item.note ? <Text style={styles.text}>Note: {item.note}</Text> : null}
+        </View>
+      </View>
+
       <View style={styles.itemButtons}>
         <Button title="Edit" onPress={() => handleEditMatch(item)} />
       </View>
@@ -179,7 +191,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 5,
   },
   teamContainer: {
     flex: 1,
@@ -193,18 +205,34 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
+  vsContainer: {
+    marginTop: -25,
+    marginBottom: 10
+  },
   vsText: {
     fontSize: 18,
     fontWeight: 'bold',
     marginHorizontal: 16,
   },
-  timeText: {
-    fontSize: 14,
-    marginVertical: 4,
-  },
   scoreText: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontStyle: 'italic',
+    alignSelf: 'center',
+  },
+  matchDetailInfoContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  timeInfo: {
+    flex: 1,
+  },
+  additionalInfo: {
+    flex: 1,
+  },
+  timeText: {
+    fontSize: 14,
     marginVertical: 4,
   },
   text: {
