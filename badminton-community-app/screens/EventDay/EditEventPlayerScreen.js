@@ -3,7 +3,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image } from 'react-native';
 
-const CashflowScreen = () => {
+const EditEventPlayerScreen = () => {
   return (
     <View style={styles.container}>
       <Text style={styles.text}>COMING SOON</Text>
@@ -38,4 +38,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default CashflowScreen;
+export default EditEventPlayerScreen;
