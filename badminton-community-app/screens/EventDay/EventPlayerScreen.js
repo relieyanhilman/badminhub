@@ -1,6 +1,7 @@
 // screens/EventDay/EventPlayerScreen.js
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { View, Text, FlatList, ActivityIndicator, StyleSheet, Alert, TouchableOpacity, TextInput } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import * as SecureStore from 'expo-secure-store';
 import { EventContext } from '../../EventContext';
 
@@ -28,6 +29,16 @@ const EventPlayerScreen = ({ route, navigation }) => {
   useEffect(() => {
      applyFiltersAndSearch();
   }, [searchQuery, players, filterOption]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (route.params?.refresh) {
+        fetchEventPlayers();
+        // menghapus refresh param setelah fetching
+        navigation.setParams({ refresh: false });
+      }
+    }, [route.params?.refresh])
+  );
 
   const fetchEventPlayers = async () => {
     setLoading(true);  // Set loading to true when fetching data
@@ -65,7 +76,7 @@ const EventPlayerScreen = ({ route, navigation }) => {
   };
 
   const handleEdit = (player) => {
-    navigation.navigate("EditEventPlayer")
+    navigation.navigate("EditEventPlayer", {player})
   };
 
   const handleSubscribe = async (player) => {
@@ -255,7 +266,7 @@ const EventPlayerScreen = ({ route, navigation }) => {
 
       <View style={styles.buttonRow}>
       <TouchableOpacity style={[styles.button, isProcessing === item.id && styles.buttonDisabled, styles.buttonEdit]}
-      onPress={() => handleEdit(item)}
+      onPress={() => handleEdit(item.player)}
       disabled={isProcessing === item.id}
       >
         <Text style={styles.buttonText}>Edit</Text>
