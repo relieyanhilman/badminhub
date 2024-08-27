@@ -186,7 +186,6 @@ const PlayerListScreen = ({ navigation, route }) => {
                   });
 
                   if (response.ok) {
-                      //Temukan pemain dari API List Player Mabar Day
                       const response2 = await fetch(`https://api.pbbedahulu.my.id/mabar/day/${dayId}`, {
                         method: 'GET',
                         headers: {
