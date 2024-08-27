@@ -9,6 +9,7 @@ import EventDetailNavigator from './EventDetailNavigator';
 
 import AddEventDayScreen from '../screens/EventDay/AddEventDayScreen'
 import EditEventDayScreen from '../screens/EventDay/EditEventDayScreen'
+import EditEventPlayerScreen from '../screens/EventDay/EditEventPlayerScreen'
 
 import AddMatchScreen from '../screens/Match/AddMatchScreen.js'
 import EditMatchScreen from '../screens/Match/EditMatchScreen.js'
@@ -50,6 +51,11 @@ const EventStackNavigator = ({route}) => {
         name="EditEventDay"
         component={EditEventDayScreen}
         options={{ title: 'Edit Event Day' }}
+      />
+      <Stack.Screen
+        name="EditEventPlayer"
+        component={EditEventPlayerScreen}
+        options={{ title: 'Edit Event Player' }}
       />
 
       <Stack.Screen

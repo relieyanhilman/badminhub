@@ -4,7 +4,7 @@ import { View, Text, FlatList, ActivityIndicator, StyleSheet, Alert, TouchableOp
 import * as SecureStore from 'expo-secure-store';
 import { EventContext } from '../../EventContext';
 
-const EventPlayerScreen = ({ route }) => {
+const EventPlayerScreen = ({ route, navigation }) => {
   const { eventId } = useContext(EventContext);
   const [players, setPlayers] = useState([]);
   const [filteredPlayers, setFilteredPlayers] = useState([]); // State untuk menyimpan hasil pencarian
@@ -65,11 +65,7 @@ const EventPlayerScreen = ({ route }) => {
   };
 
   const handleEdit = (player) => {
-    // Handle the edit action, navigate to the edit screen
-//    navigation.navigate('EditPlayerScreen', { player });
-    setIsProcessing(player.id);
-    console.log("handleEdit")
-    setIsProcessing(null);
+    navigation.navigate("EditEventPlayer")
   };
 
   const handleSubscribe = async (player) => {
