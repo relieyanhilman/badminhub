@@ -36,7 +36,7 @@ const AddPlayerScreen = ({ navigation, route }) => {
       }
 
       // Create Player API Request
-      const response = await fetch('https://api.pbbedahulu.my.id/player/create', {
+      const response = await fetch('https://apiv2.pbbedahulu.my.id/player/create', {
         method: 'POST',
         headers: {
           'Authorization': token,
@@ -59,7 +59,7 @@ const AddPlayerScreen = ({ navigation, route }) => {
       }
 
       // Apply Player to Event Day
-      const applyResponse = await fetch('https://api.pbbedahulu.my.id/mabar/day/detail/create', {
+      const applyResponse = await fetch('https://apiv2.pbbedahulu.my.id/mabar/day/detail/create', {
         method: 'POST',
         headers: {
           'Authorization': token,

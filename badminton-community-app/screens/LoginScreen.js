@@ -17,7 +17,7 @@ const LoginScreen = ({ navigation }) => {
   const handleLogin = async () => {
     setLoading(true); // Mengatur state loading
     try {
-      const response = await fetch('https://api.pbbedahulu.my.id/login', {
+      const response = await fetch('https://apiv2.pbbedahulu.my.id/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

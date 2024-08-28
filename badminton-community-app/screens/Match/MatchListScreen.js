@@ -9,6 +9,7 @@ const MatchListScreen = ({ navigation, route }) => {
   const [matches, setMatches] = useState([]);
   const [courts, setCourts] = useState({});
   const [loading, setLoading] = useState(true); // Menambah state loading
+  const [refreshing, setRefreshing] = useState(false); // State for pull to refresh
   const [error, setError] = useState(null); // Menambah state error
 
   useEffect(() => {
@@ -27,7 +28,7 @@ const MatchListScreen = ({ navigation, route }) => {
     const fetchMatches = async () => {
       try {
       const token = await SecureStore.getItemAsync('userToken');
-        const response = await fetch(`https://api.pbbedahulu.my.id/mabar/day/${dayId}`, {
+        const response = await fetch(`https://apiv2.pbbedahulu.my.id/mabar/day/${dayId}`, {
           method: 'GET',
           headers: {
             'Authorization': token,
@@ -51,6 +52,8 @@ const MatchListScreen = ({ navigation, route }) => {
         setError('An error occurred while fetching matches');
       } finally {
         setLoading(false);
+        setRefreshing(false); // Reset refreshing state when data is fetched
+
       }
     };
 
@@ -132,7 +135,12 @@ const MatchListScreen = ({ navigation, route }) => {
     </View>
   );
 
-  if (loading) {
+   const onRefresh = () => {
+     setRefreshing(true);
+     fetchMatches();
+   };
+
+  if (loading && !refreshing) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#0000ff" />
@@ -159,6 +167,8 @@ const MatchListScreen = ({ navigation, route }) => {
         contentContainerStyle={styles.container}
         style={{ flex: 1 }} // Memastikan FlatList mengambil seluruh tinggi container
         contentContainerStyle={{ paddingBottom: 16 }} // Menambahkan padding di bagian bawah
+        refreshing={refreshing}
+        onRefresh={onRefresh}
       />
     </View>
   );
