@@ -188,7 +188,7 @@ const EditMatchScreen = ({ route, navigation }) => {
       return;
     }
 
-    if (endTime && endTime < startTime) {
+    if (endTime && formattedEndTime < formattedStartTime) {
       Alert.alert('Error', 'End time cannot be earlier than start time.');
       return;
     }

@@ -21,6 +21,8 @@ const EventPlayerScreen = ({ route, navigation }) => {
   //State untuk filter member, non member, atau all players
   const [filterOption, setFilterOption] = useState('all'); // 'all', 'member', 'non member'
 
+  //state untuk justifikasi apakah perlu refresh atau tidak
+  const { shouldRefresh, resetRefresh } = useContext(EventContext);
 
   useEffect(() => {
     fetchEventPlayers();
@@ -37,8 +39,17 @@ const EventPlayerScreen = ({ route, navigation }) => {
         // menghapus refresh param setelah fetching
         navigation.setParams({ refresh: false });
       }
+
     }, [route.params?.refresh])
   );
+
+  useEffect(() => {
+    if (shouldRefresh) {
+      fetchEventPlayers();
+      resetRefresh(); // Reset state setelah refresh dilakukan
+    }
+  }, [shouldRefresh]);
+
 
   const fetchEventPlayers = async () => {
     setLoading(true);  // Set loading to true when fetching data

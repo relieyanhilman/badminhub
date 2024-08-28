@@ -110,7 +110,7 @@ const MatchListScreen = ({ navigation, route }) => {
             </View>
       </View>
 
-      {item.score == null ? null : (      <View style={styles.vsContainer}>
+      {item.score == null || item.score == "" ? null : (      <View style={styles.vsContainer}>
                                              <Text style={[styles.scoreText, {fontWeight: 'bold'}]}>Final Score</Text>
                                              <Text style={styles.scoreText}>{item.score || 'N/A'}</Text>
                                          </View>)}
