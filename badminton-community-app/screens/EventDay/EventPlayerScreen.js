@@ -48,7 +48,7 @@ const EventPlayerScreen = ({ route, navigation }) => {
         throw new Error('User token not found');
       }
 
-      const response = await fetch(`https://api.pbbedahulu.my.id/mabar/player/${eventId}`, {
+      const response = await fetch(`https://apiv2.pbbedahulu.my.id/mabar/player/${eventId}`, {
         method: 'GET',
         headers: {
           'Authorization': token,
@@ -98,7 +98,7 @@ const EventPlayerScreen = ({ route, navigation }) => {
               setIsProcessing(player.id);
                   try {
                     const token = await SecureStore.getItemAsync('userToken');
-                    const response = await fetch('https://api.pbbedahulu.my.id/mabar/player/create', {
+                    const response = await fetch('https://apiv2.pbbedahulu.my.id/mabar/player/create', {
                       method: 'POST',
                       headers: {
                         'Authorization': token,
@@ -146,7 +146,7 @@ const EventPlayerScreen = ({ route, navigation }) => {
             setIsProcessing(player.id);
               try {
                 const token = await SecureStore.getItemAsync('userToken');
-                const response = await fetch('https://api.pbbedahulu.my.id/mabar/player/delete', {
+                const response = await fetch('https://apiv2.pbbedahulu.my.id/mabar/player/delete', {
                   method: 'POST',
                   headers: {
                     'Authorization': token,
@@ -193,7 +193,7 @@ const EventPlayerScreen = ({ route, navigation }) => {
               setIsProcessing(player.id);
           try {
             const token = await SecureStore.getItemAsync('userToken');
-            const response = await fetch('https://api.pbbedahulu.my.id/mabar/player/recreate', {
+            const response = await fetch('https://apiv2.pbbedahulu.my.id/mabar/player/recreate', {
               method: 'POST',
               headers: {
                 'Authorization': token,

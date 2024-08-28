@@ -130,7 +130,7 @@ const EditMatchScreen = ({ route, navigation }) => {
   const fetchAttendees = async () => {
     try {
       const token = await SecureStore.getItemAsync('userToken');
-      const response = await fetch(`https://api.pbbedahulu.my.id/mabar/day/${dayId}`, {
+      const response = await fetch(`https://apiv2.pbbedahulu.my.id/mabar/day/${dayId}`, {
         method: 'GET',
         headers: {
           'Authorization': token,
@@ -155,7 +155,7 @@ const EditMatchScreen = ({ route, navigation }) => {
   const fetchCourts = async () => {
     try {
       const token = await SecureStore.getItemAsync('userToken');
-      const response = await fetch('https://api.pbbedahulu.my.id/court', {
+      const response = await fetch('https://apiv2.pbbedahulu.my.id/court', {
         method: 'POST',
         headers: {
           'Authorization': token,
@@ -195,7 +195,7 @@ const EditMatchScreen = ({ route, navigation }) => {
 
     try {
       const token = await SecureStore.getItemAsync('userToken');
-      const response = await fetch('https://api.pbbedahulu.my.id/mabar/match/update', {
+      const response = await fetch('https://apiv2.pbbedahulu.my.id/mabar/match/update', {
         method: 'POST',
         headers: {
           'Authorization': token,

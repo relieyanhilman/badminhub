@@ -62,7 +62,7 @@ const PlayerListScreen = ({ navigation, route }) => {
       }
 
       // Fetch Event Day Players
-      const response1 = await fetch(`https://api.pbbedahulu.my.id/mabar/day/${dayId}`, {
+      const response1 = await fetch(`https://apiv2.pbbedahulu.my.id/mabar/day/${dayId}`, {
         method: 'GET',
         headers: {
           'Authorization': token,
@@ -73,7 +73,7 @@ const PlayerListScreen = ({ navigation, route }) => {
       const data1 = await response1.json();
 
       // Fetch Master Players
-      const response2 = await fetch(`https://api.pbbedahulu.my.id/player`, {
+      const response2 = await fetch(`https://apiv2.pbbedahulu.my.id/player`, {
         method: 'POST',
         headers: {
           'Authorization': token,
@@ -172,7 +172,7 @@ const PlayerListScreen = ({ navigation, route }) => {
                     throw new Error('User token not found');
                   }
 
-                  const response = await fetch(`https://api.pbbedahulu.my.id/mabar/day/detail/create`, {
+                  const response = await fetch(`https://apiv2.pbbedahulu.my.id/mabar/day/detail/create`, {
                     method: 'POST',
                     headers: {
                       'Authorization': token,
@@ -186,7 +186,7 @@ const PlayerListScreen = ({ navigation, route }) => {
                   });
 
                   if (response.ok) {
-                      const response2 = await fetch(`https://api.pbbedahulu.my.id/mabar/day/${dayId}`, {
+                      const response2 = await fetch(`https://apiv2.pbbedahulu.my.id/mabar/day/${dayId}`, {
                         method: 'GET',
                         headers: {
                           'Authorization': token,
@@ -272,7 +272,7 @@ const PlayerListScreen = ({ navigation, route }) => {
                   const token = await SecureStore.getItemAsync('userToken');
                   if (!token) throw new Error('User token not found');
 
-                  const response = await fetch(`https://api.pbbedahulu.my.id/cashflow/paid`, {
+                  const response = await fetch(`https://apiv2.pbbedahulu.my.id/cashflow/paid`, {
                     method: 'POST',
                     headers: {
                       'Authorization': token,

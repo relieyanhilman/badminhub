@@ -25,7 +25,7 @@ const EventDayListScreen = ({ navigation, route }) => {
         throw new Error('User token not found');
       }
 
-      const response = await fetch(`https://api.pbbedahulu.my.id/mabar/${eventId}`, {
+      const response = await fetch(`https://apiv2.pbbedahulu.my.id/mabar/${eventId}`, {
         method: 'GET',
         headers: {
           'Authorization': `${token}`,
