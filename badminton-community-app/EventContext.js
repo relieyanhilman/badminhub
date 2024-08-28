@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const EventContext = createContext();
@@ -7,6 +7,15 @@ export const EventProvider = ({ children }) => {
   const [eventName, setEventName] = useState('');
   const [eventId, setEventId] = useState('');
   const [eventHallId, setEventHallId] = useState('');
+  const [shouldRefresh, setShouldRefresh] = useState(false);
+
+  const triggerRefresh = useCallback(() => {
+    setShouldRefresh(true);
+  }, []);
+
+  const resetRefresh = useCallback(() => {
+    setShouldRefresh(false);
+  }, []);
 
   useEffect(() => {
     const loadEvent = async () => {
@@ -46,7 +55,7 @@ export const EventProvider = ({ children }) => {
   };
 
   return (
-    <EventContext.Provider value={{ eventId, eventName, eventHallId, updateEvent }}>
+    <EventContext.Provider value={{ eventId, eventName, eventHallId, updateEvent, shouldRefresh, triggerRefresh, resetRefresh }}>
       {children}
     </EventContext.Provider>
   );

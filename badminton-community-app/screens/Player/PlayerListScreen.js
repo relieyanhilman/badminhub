@@ -1,9 +1,11 @@
 //Player/PlayerListScreen
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useContext } from 'react';
 import { View, Text, FlatList, Button, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, Modal, TextInput } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Picker } from '@react-native-picker/picker';
 import * as SecureStore from 'expo-secure-store';
+
+import { EventContext } from '../../EventContext';
 
 const PlayerListScreen = ({ navigation, route }) => {
   const { dayId } = route.params;
@@ -30,6 +32,9 @@ const PlayerListScreen = ({ navigation, route }) => {
 
   // State untuk fitur edit to paid
   const [processingPlayerId, setProcessingPlayerId] = useState(null);
+
+  //untuk men-trigger refresh di EventPlayerScreen
+  const { triggerRefresh } = useContext(EventContext);
 
   useEffect(() => {
     fetchPlayers();
@@ -186,6 +191,7 @@ const PlayerListScreen = ({ navigation, route }) => {
                   });
 
                   if (response.ok) {
+                      triggerRefresh(); // Trigger refresh di EventPlayerScreen
                       const response2 = await fetch(`https://apiv2.pbbedahulu.my.id/mabar/day/${dayId}`, {
                         method: 'GET',
                         headers: {
