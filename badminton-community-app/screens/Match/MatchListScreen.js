@@ -12,14 +12,20 @@ const MatchListScreen = ({ navigation, route }) => {
   const [refreshing, setRefreshing] = useState(false); // State for pull to refresh
   const [error, setError] = useState(null); // Menambah state error
 
+  const [totalParticipants, setTotalParticipants] = useState(0); // State for total participants
+  const [totalMatches, setTotalMatches] = useState(0); // State for total matches
+
   useEffect(() => {
     fetchMatches()
+    fetchSummary()
   }, []);
 
   useFocusEffect(
       useCallback(() => {
         if (route.params?.refresh) {
           fetchMatches(); // Panggil fungsi fetchMatches saat screen difokuskan kembali
+          fetchSummary(); // Refresh total participants and matches
+
           navigation.setParams({ refresh: false });
         }
       }, [route.params?.refresh])
@@ -56,6 +62,62 @@ const MatchListScreen = ({ navigation, route }) => {
 
       }
     };
+
+  const fetchSummary = async () => {
+    try {
+      const token = await SecureStore.getItemAsync('userToken');
+      const response = await fetch(`https://apiv2.pbbedahulu.my.id/mabar/day/recap/generate`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          open_mabar_day_id: dayId,
+          note: '',
+        }),
+      });
+
+      const result = await response.json();
+      if (response.ok && result.success) {
+        await fetchRecap(dayId); // Fetch recap after generating it
+      } else {
+        Alert.alert('Error', result.message || 'Failed to regenerate summary');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'An error occurred while regenerate the summary');
+    }
+  };
+
+  const fetchRecap = async (dayId) => {
+    try {
+
+      const token = await SecureStore.getItemAsync('userToken');
+      if (!token) {
+        throw new Error('User token not found');
+      }
+
+      const response = await fetch(`https://apiv2.pbbedahulu.my.id/mabar/day/recap/${dayId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setTotalParticipants(data.data[0].participant_count_total || 0);
+        setTotalMatches(data.data[0].total_matches_count || 0);
+      } else {
+        Alert.alert('Error', data.message || 'Failed to retrieve summary');
+      }
+    } catch (error) {
+      console.error('Failed to fetch summary:', error);
+      Alert.alert('Error', 'An error occurred while retrieve the summary');
+    }
+  };
 
 
   const handleAddMatch = () => {
@@ -138,6 +200,8 @@ const MatchListScreen = ({ navigation, route }) => {
    const onRefresh = () => {
      setRefreshing(true);
      fetchMatches();
+     fetchSummary();
+
    };
 
   if (loading && !refreshing) {
@@ -160,6 +224,19 @@ const MatchListScreen = ({ navigation, route }) => {
   return (
     <View style={styles.container}>
       <Button title="Add Match" onPress={handleAddMatch} />
+      <View style={styles.summaryContainer}>
+
+        <View style={styles.summarySubContainer}>
+            <Text style={[styles.summaryText, {fontWeight: 'bold'}]}>Total Participants</Text>
+            <Text style={styles.summaryText}>{totalParticipants}</Text>
+        </View>
+
+        <View style={styles.summarySubContainer}>
+            <Text style={[styles.summaryText, {fontWeight: 'bold'}]}>Total Matches</Text>
+            <Text style={styles.summaryText}>{totalMatches}</Text>
+        </View>
+
+      </View>
       <FlatList
         data={matches}
         renderItem={renderItem}
@@ -178,6 +255,22 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
+  },
+  summaryContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    padding: 8,
+    backgroundColor: 'white', // Warna abu-abu lembut
+    borderRadius: 8,
+    marginTop: 7,
+    marginBottom: 10
+  },
+  summarySubContainer: {
+    alignItems: 'center',
+  },
+  summaryText: {
+    fontSize: 15, // Ukuran font lebih kecil
+    color: '#555', // Warna abu-abu gelap untuk teks
   },
   item: {
     backgroundColor: '#f9f9f9',
