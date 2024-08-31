@@ -26,10 +26,11 @@ const EventDayListScreen = ({ navigation, route }) => {
       if (route.params?.refresh) {
         fetchEventDays();  // Fetch ulang data jika refresh true
         // Reset refresh parameter agar tidak terjadi loop fetching
+
         navigation.setParams({ refresh: false });
       }
 
-      if(route.params?.dayIdUpdated !== 0){
+      if(route.params?.dayIdUpdated !== undefined){
         generateRecap(route.params?.dayIdUpdated);
 
         navigation.setParams({ dayIdUpdated : 0})
@@ -129,7 +130,6 @@ const EventDayListScreen = ({ navigation, route }) => {
       });
 
       const data = await response.json();
-
       if (response.ok && data.success) {
         await fetchRecap(dayId); // Fetch recap after generating it
       } else {
@@ -187,9 +187,24 @@ const EventDayListScreen = ({ navigation, route }) => {
 
         <View style={styles.dateNoteEdit}>
              <TouchableOpacity onPress={() => handleEventDayPress(item)}>
-                <Text style={styles.text}>Date: {formatDate(item.date)}</Text>
-                <Text style={styles.text}>Note: {item.note}</Text>
-                <Text style={styles.text}>Shuttlecock provided: {item.shuttlecock_provided}</Text>
+
+                <View style={{flexDirection: 'row'}}>
+                    <Text style={[styles.text, {fontWeight: 'bold'}]}>Date: </Text>
+                    <Text style={styles.text}>{formatDate(item.date)}</Text>
+                </View>
+
+                <View style={{flexDirection: 'row'}}>
+                    <Text style={[styles.text, {fontWeight: 'bold'}]}>Note: </Text>
+                    <Text style={styles.text}>{item.note}</Text>
+                </View>
+
+                { item.shuttlecock_provided !== null ? (<View style={{flexDirection: 'row'}}>
+                    <Text style={[styles.text, {fontWeight: 'bold'}]}>Shuttlecock provided: </Text>
+                    <Text style={styles.text}>{item.shuttlecock_provided} </Text>
+                    </View>) : null}
+
+
+
              </TouchableOpacity>
 
              <TouchableOpacity style={[styles.button, styles.editButton]} onPress={() => handleEditPress(item)}>
@@ -197,16 +212,16 @@ const EventDayListScreen = ({ navigation, route }) => {
              </TouchableOpacity>
          </View>
 
+       <TouchableOpacity style={styles.recapIconTouchable} onPress={() => handleToggleExpand(item.id, isRecapGenerated)}>
         <View style={styles.recapIconContainer}>
           <Text style={styles.recapText}>RECAP</Text>
-          <TouchableOpacity style={styles.recapIcon} onPress={() => handleToggleExpand(item.id, isRecapGenerated)}>
            {isLoading? (
                 <ActivityIndicator size="small" color="#333" />
            ) : (
                 <Icon name={isExpanded ? 'chevron-up' : 'chevron-down'} size={20} color="#333" />
            )}
-          </TouchableOpacity>
         </View>
+       </TouchableOpacity>
 
         {isExpanded && recaps[item.id] && (
           <View style={styles.recapContainer}>
@@ -368,8 +383,9 @@ const styles = StyleSheet.create({
     alignItems: 'center', // Pusatkan teks dan ikon secara vertikal
     marginTop: 5, // Beri sedikit jarak dari atas
   },
-  recapIcon: {
+  recapIconTouchable: {
     alignSelf: 'center',
+    width: '100%',
   },
   recapText: {
     fontSize: 12, // Ukuran font kecil
