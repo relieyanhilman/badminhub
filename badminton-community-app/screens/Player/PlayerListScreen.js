@@ -218,7 +218,7 @@ const PlayerListScreen = ({ navigation, route }) => {
                       }
                   } else {
                     const data = await response.json();
-                    Alert.alert('Error', data.message || 'Failed to apply player');
+                    Alert.alert('Error', data.errors[0]["msg"] || 'Failed to apply player');
                   }
                 } catch (err) {
                   console.log(err);
