@@ -78,7 +78,7 @@ const EditEventScreen = ({ route, navigation }) => {
           throw new Error('User token not found');
         }
 
-        const response = await fetch('https://api.pbbedahulu.my.id/hall', {
+        const response = await fetch('https://apiv2.pbbedahulu.my.id/hall', {
           method: 'POST',
           headers: {
             'Authorization': `${token}`,
@@ -141,7 +141,7 @@ const EditEventScreen = ({ route, navigation }) => {
         throw new Error('User token not found');
       }
 
-      const response = await fetch('https://api.pbbedahulu.my.id/mabar/update', {
+      const response = await fetch('https://apiv2.pbbedahulu.my.id/mabar/update', {
         method: 'POST',
         headers: {
           'Authorization': `${token}`,

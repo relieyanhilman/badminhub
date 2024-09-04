@@ -9,16 +9,23 @@ const MatchListScreen = ({ navigation, route }) => {
   const [matches, setMatches] = useState([]);
   const [courts, setCourts] = useState({});
   const [loading, setLoading] = useState(true); // Menambah state loading
+  const [refreshing, setRefreshing] = useState(false); // State for pull to refresh
   const [error, setError] = useState(null); // Menambah state error
+
+  const [totalParticipants, setTotalParticipants] = useState(0); // State for total participants
+  const [totalMatches, setTotalMatches] = useState(0); // State for total matches
 
   useEffect(() => {
     fetchMatches()
+    fetchSummary()
   }, []);
 
   useFocusEffect(
       useCallback(() => {
         if (route.params?.refresh) {
           fetchMatches(); // Panggil fungsi fetchMatches saat screen difokuskan kembali
+          fetchSummary(); // Refresh total participants and matches
+
           navigation.setParams({ refresh: false });
         }
       }, [route.params?.refresh])
@@ -27,7 +34,7 @@ const MatchListScreen = ({ navigation, route }) => {
     const fetchMatches = async () => {
       try {
       const token = await SecureStore.getItemAsync('userToken');
-        const response = await fetch(`https://api.pbbedahulu.my.id/mabar/day/${dayId}`, {
+        const response = await fetch(`https://apiv2.pbbedahulu.my.id/mabar/day/${dayId}`, {
           method: 'GET',
           headers: {
             'Authorization': token,
@@ -38,7 +45,12 @@ const MatchListScreen = ({ navigation, route }) => {
         const result = await response.json();
 
         if (result.success) {
-          setMatches(result.data.matches);
+            const sortedMatches = result.data.matches.sort((a, b) => {
+              const dateA = new Date(`2024-01-01T${a.start_time}`);
+              const dateB = new Date(`2024-01-01T${b.start_time}`);
+              return dateB - dateA; // Sort by newest start_time first
+            });
+          setMatches(sortedMatches);
         } else {
           setError(result.message || 'Failed to retrieve data');
         }
@@ -46,13 +58,70 @@ const MatchListScreen = ({ navigation, route }) => {
         setError('An error occurred while fetching matches');
       } finally {
         setLoading(false);
+        setRefreshing(false); // Reset refreshing state when data is fetched
+
       }
     };
 
+  const fetchSummary = async () => {
+    try {
+      const token = await SecureStore.getItemAsync('userToken');
+      const response = await fetch(`https://apiv2.pbbedahulu.my.id/mabar/day/recap/generate`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          open_mabar_day_id: dayId,
+          note: '',
+        }),
+      });
+
+      const result = await response.json();
+      if (response.ok && result.success) {
+        await fetchRecap(dayId); // Fetch recap after generating it
+      } else {
+        Alert.alert('Error', result.message || 'Failed to regenerate summary');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'An error occurred while regenerate the summary');
+    }
+  };
+
+  const fetchRecap = async (dayId) => {
+    try {
+
+      const token = await SecureStore.getItemAsync('userToken');
+      if (!token) {
+        throw new Error('User token not found');
+      }
+
+      const response = await fetch(`https://apiv2.pbbedahulu.my.id/mabar/day/recap/${dayId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setTotalParticipants(data.data[0].participant_count_total || 0);
+        setTotalMatches(data.data[0].total_matches_count || 0);
+      } else {
+        Alert.alert('Error', data.message || 'Failed to retrieve summary');
+      }
+    } catch (error) {
+      console.error('Failed to fetch summary:', error);
+      Alert.alert('Error', 'An error occurred while retrieve the summary');
+    }
+  };
+
 
   const handleAddMatch = () => {
-    matches_length = matches.length
-    navigation.navigate('AddMatch', {matches_length});
+    navigation.navigate('AddMatch', {dayId});
   };
 
   const handleEditMatch = (match) => {
@@ -89,7 +158,7 @@ const MatchListScreen = ({ navigation, route }) => {
               </View>
             </View>
 
-            <Text style={styles.vsText}>VS</Text>
+              <Text style={styles.vsText}>VS</Text>
 
             <View style={styles.teamContainer}>
               <View style={styles.playerContainer}>
@@ -103,20 +172,39 @@ const MatchListScreen = ({ navigation, route }) => {
             </View>
       </View>
 
-      <Text style={styles.timeText}>Start Time: {item.start_time}</Text>
-      {item.end_time !== "00:00:00" && <Text style={styles.text}>End Time: {item.end_time}</Text>}
+      {item.score == null || item.score == "" ? null : (      <View style={styles.vsContainer}>
+                                             <Text style={[styles.scoreText, {fontWeight: 'bold'}]}>Final Score</Text>
+                                             <Text style={styles.scoreText}>{item.score || 'N/A'}</Text>
+                                         </View>)}
 
-      {item.end_time !== "00:00:00" && <Text style={styles.text}>Duration: {item.duration}</Text>}
-      <Text style={styles.scoreText}>Score: {item.score || 'Not Set'}</Text>
-      {item.shuttlecock_used && <Text style={styles.text}>Shuttlecocks Used: {item.shuttlecock_used}</Text>}
-      {item.note && <Text style={styles.text}>Note: {item.note}</Text>}
+
+      <View style={styles.matchDetailInfoContainer}>
+        <View style={styles.timeInfo}>
+          {item.start_time !== "" ? <Text style={styles.timeText}>Start Time: {item.start_time}</Text> : null}
+          <Text style={styles.text}>End Time: {item.end_time !== null ? item.end_time : "Not Set" }</Text>
+        </View>
+
+        <View style={styles.additionalInfo}>
+          {item.duration == "0 minutes" ? null : <Text style={styles.text}>Duration: {item.duration}</Text>}
+          <Text style={styles.text}>Shuttlecocks Used: {item.shuttlecock_used || item.shuttlecock_used === 0? item.shuttlecock_used : "Not Set"}</Text>
+          {item.note ? <Text style={styles.text}>Note: {item.note}</Text> : null}
+        </View>
+      </View>
+
       <View style={styles.itemButtons}>
         <Button title="Edit" onPress={() => handleEditMatch(item)} />
       </View>
     </View>
   );
 
-  if (loading) {
+   const onRefresh = () => {
+     setRefreshing(true);
+     fetchMatches();
+     fetchSummary();
+
+   };
+
+  if (loading && !refreshing) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#0000ff" />
@@ -136,6 +224,19 @@ const MatchListScreen = ({ navigation, route }) => {
   return (
     <View style={styles.container}>
       <Button title="Add Match" onPress={handleAddMatch} />
+      <View style={styles.summaryContainer}>
+
+        <View style={styles.summarySubContainer}>
+            <Text style={[styles.summaryText, {fontWeight: 'bold'}]}>Total Participants</Text>
+            <Text style={styles.summaryText}>{totalParticipants}</Text>
+        </View>
+
+        <View style={styles.summarySubContainer}>
+            <Text style={[styles.summaryText, {fontWeight: 'bold'}]}>Total Matches</Text>
+            <Text style={styles.summaryText}>{totalMatches}</Text>
+        </View>
+
+      </View>
       <FlatList
         data={matches}
         renderItem={renderItem}
@@ -143,6 +244,8 @@ const MatchListScreen = ({ navigation, route }) => {
         contentContainerStyle={styles.container}
         style={{ flex: 1 }} // Memastikan FlatList mengambil seluruh tinggi container
         contentContainerStyle={{ paddingBottom: 16 }} // Menambahkan padding di bagian bawah
+        refreshing={refreshing}
+        onRefresh={onRefresh}
       />
     </View>
   );
@@ -152,6 +255,22 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
+  },
+  summaryContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    padding: 8,
+    backgroundColor: 'white', // Warna abu-abu lembut
+    borderRadius: 8,
+    marginTop: 7,
+    marginBottom: 10
+  },
+  summarySubContainer: {
+    alignItems: 'center',
+  },
+  summaryText: {
+    fontSize: 15, // Ukuran font lebih kecil
+    color: '#555', // Warna abu-abu gelap untuk teks
   },
   item: {
     backgroundColor: '#f9f9f9',
@@ -175,7 +294,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 5,
   },
   teamContainer: {
     flex: 1,
@@ -189,18 +308,34 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
+  vsContainer: {
+    marginTop: -25,
+    marginBottom: 10
+  },
   vsText: {
     fontSize: 18,
     fontWeight: 'bold',
     marginHorizontal: 16,
   },
-  timeText: {
-    fontSize: 14,
-    marginVertical: 4,
-  },
   scoreText: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontStyle: 'italic',
+    alignSelf: 'center',
+  },
+  matchDetailInfoContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  timeInfo: {
+    flex: 1,
+  },
+  additionalInfo: {
+    flex: 1,
+  },
+  timeText: {
+    fontSize: 14,
     marginVertical: 4,
   },
   text: {
