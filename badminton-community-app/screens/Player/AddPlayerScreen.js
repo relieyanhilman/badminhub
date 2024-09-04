@@ -9,10 +9,10 @@ const AddPlayerScreen = ({ navigation, route }) => {
 
   const [name, setName] = useState('');
   const [alias, setAlias] = useState('');
-  const [gender, setGender] = useState('M');
+  const [gender, setGender] = useState('');
   const [contact, setContact] = useState('');
-  const [level, setLevel] = useState('A');
-  const [ageRange, setAgeRange] = useState('15-20');
+  const [level, setLevel] = useState('');
+  const [ageRange, setAgeRange] = useState('');
   const [loading, setLoading] = useState(false);
 
   const aliasRef = useRef(null);
@@ -36,7 +36,7 @@ const AddPlayerScreen = ({ navigation, route }) => {
       }
 
       // Create Player API Request
-      const response = await fetch('https://api.pbbedahulu.my.id/player/create', {
+      const response = await fetch('https://apiv2.pbbedahulu.my.id/player/create', {
         method: 'POST',
         headers: {
           'Authorization': token,
@@ -59,7 +59,7 @@ const AddPlayerScreen = ({ navigation, route }) => {
       }
 
       // Apply Player to Event Day
-      const applyResponse = await fetch('https://api.pbbedahulu.my.id/mabar/day/detail/create', {
+      const applyResponse = await fetch('https://apiv2.pbbedahulu.my.id/mabar/day/detail/create', {
         method: 'POST',
         headers: {
           'Authorization': token,
@@ -114,7 +114,15 @@ const AddPlayerScreen = ({ navigation, route }) => {
       />
 
       <Text style={styles.label}>Gender</Text>
-      <Picker selectedValue={gender} onValueChange={setGender} style={styles.input}>
+      <Picker
+      selectedValue={gender}
+      onValueChange={(value) => {
+           setGender(value);
+           contactRef.current.focus()
+        }
+      }
+      ref={genderRef}
+      style={styles.input}>
         <Picker.Item label="Select Gender" value="" />
         <Picker.Item label="Male" value="M" />
         <Picker.Item label="Female" value="F" />
@@ -137,7 +145,15 @@ const AddPlayerScreen = ({ navigation, route }) => {
       />
 
       <Text style={styles.label}>Level</Text>
-      <Picker selectedValue={level} onValueChange={setLevel} style={styles.input}>
+      <Picker
+      selectedValue={level}
+      onValueChange={(value) => {
+           setLevel(value);
+           ageRangeRef.current.focus()
+        }
+      }
+      ref={levelRef}
+      style={styles.input}>
         <Picker.Item label="Select Level" value="" />
         <Picker.Item label="Level A" value="A" />
         <Picker.Item label="Level B" value="B" />
@@ -145,7 +161,11 @@ const AddPlayerScreen = ({ navigation, route }) => {
       </Picker>
 
       <Text style={styles.label}>Age Range</Text>
-      <Picker selectedValue={ageRange} onValueChange={setAgeRange} style={styles.input}>
+      <Picker
+      selectedValue={ageRange}
+      onValueChange={setAgeRange}
+      ref={ageRangeRef}
+      style={styles.input}>
         <Picker.Item label="Select Age Range" value="" />
         <Picker.Item label="15-20" value="15-20" />
         <Picker.Item label="21-30" value="21-30" />

@@ -11,12 +11,19 @@ const EditEventDayScreen = ({ route, navigation }) => {
     open_mabar_id: eventId,
     date: day.date,
     note: day.note || '',
+    shuttlecock_provided: day.shuttlecock_provided,
   });
 
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleInputChange = (field, value) => {
+      let parsedValue = value;
+
+      // Jika field adalah 'shuttlecock_provided' dan nilai tidak kosong
+      if (field === 'shuttlecock_provided') {
+        parsedValue = value === '' ? 0 : parseInt(value, 10);
+      }
     setEventDayData({ ...eventDayData, [field]: value });
   };
 
@@ -29,8 +36,8 @@ const EditEventDayScreen = ({ route, navigation }) => {
   };
 
   const handleSave = async () => {
-    if (!eventDayData.date.trim()) {
-      Alert.alert('Invalid input', 'Please select a date');
+    if (!eventDayData.date.trim() || !eventDayData.shuttlecock_provided) {
+      Alert.alert('Invalid input', 'Please fill the date and shuttlecock provided');
       return;
     }
 
@@ -42,7 +49,7 @@ const EditEventDayScreen = ({ route, navigation }) => {
         throw new Error('User token not found');
       }
 
-      const response = await fetch('https://api.pbbedahulu.my.id/mabar/day/update', {
+      const response = await fetch('https://apiv2.pbbedahulu.my.id/mabar/day/update', {
         method: 'POST',
         headers: {
           'Authorization': token,
@@ -55,7 +62,7 @@ const EditEventDayScreen = ({ route, navigation }) => {
 
       if (response.ok) {
         Alert.alert('Success', 'Event Day updated successfully');
-        navigation.navigate('EventDayList', { refresh: true });
+        navigation.navigate('EventDayList', { refresh: true, dayIdUpdated: eventDayData.id });
       } else {
         let errorMessage = data.message || 'Failed to update event day';
         if (response.status === 401) {
@@ -102,6 +109,15 @@ const EditEventDayScreen = ({ route, navigation }) => {
           value={eventDayData.note}
           onChangeText={(text) => handleInputChange('note', text)}
           style={styles.input}
+        />
+
+        <Text style={styles.label}>Shuttlecock Provided</Text>
+        <TextInput
+          placeholder="0"
+          onChangeText={(num) => handleInputChange('shuttlecock_provided', num)}
+          style={styles.input}
+          keyboardType="numeric"
+          value={eventDayData.shuttlecock_provided.toString()}
         />
 
         <Button title={loading ? 'Saving...' : 'Save Changes'} onPress={handleSave} disabled={loading} />

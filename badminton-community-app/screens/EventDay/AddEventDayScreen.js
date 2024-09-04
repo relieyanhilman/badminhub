@@ -8,6 +8,7 @@ const AddEventDayScreen = ({ navigation, route }) => {
   const { eventId } = route.params;
   const [date, setDate] = useState('');
   const [note, setNote] = useState('');
+  const [shuttlecockProvided, setShuttlecockProvided] = useState('')
   const [loading, setLoading] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
 
@@ -32,7 +33,10 @@ const AddEventDayScreen = ({ navigation, route }) => {
         throw new Error('User token not found');
       }
 
-      const response = await fetch('https://api.pbbedahulu.my.id/mabar/day/create', {
+      if (date.trim() == '' || shuttlecockProvided.trim() == ''){
+        throw new Error('Please fill the date and shuttlecock provided')
+      }
+      const response = await fetch('https://apiv2.pbbedahulu.my.id/mabar/day/create', {
         method: 'POST',
         headers: {
           'Authorization': `${token}`,
@@ -42,6 +46,7 @@ const AddEventDayScreen = ({ navigation, route }) => {
           open_mabar_id: eventId,
           date: date,
           note: note,
+          shuttlecock_provided: parseInt(shuttlecockProvided),
         }),
       });
 
@@ -49,7 +54,7 @@ const AddEventDayScreen = ({ navigation, route }) => {
 
       if (response.ok) {
         Alert.alert('Success', 'Event day added successfully');
-        navigation.navigate('EventDayList', {eventId, refresh: true}); // Kembali ke EventDayListScreen
+        navigation.navigate('EventDayList', {eventId, refresh: true});
       } else {
         let errorMessage = data.message || 'Failed to add event day';
         if (response.status === 401) {
@@ -61,7 +66,7 @@ const AddEventDayScreen = ({ navigation, route }) => {
       }
     } catch (err) {
       console.log(err);
-      Alert.alert('Error', 'Something went wrong. Please try again later.');
+      Alert.alert('Error', err.message);
     } finally {
       setLoading(false);
     }
@@ -93,6 +98,16 @@ return (
         value={note}
         onChangeText={setNote}
       />
+
+      <Text style={styles.label}>Shuttlecock Provided</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="0"
+        value={shuttlecockProvided}
+        keyboardType="numeric"
+        onChangeText={setShuttlecockProvided}
+      />
+
       <Button title={loading ? 'Saving...' : 'Save Event Day'} onPress={handleSave} disabled={loading} />
     </View>
   );

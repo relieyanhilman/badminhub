@@ -18,7 +18,7 @@ const DashboardScreen = () => {
           throw new Error('User token not found');
         }
 
-        const response = await fetch('https://api.pbbedahulu.my.id/profile', {
+        const response = await fetch('https://apiv2.pbbedahulu.my.id/profile', {
           method: 'GET',
           headers: {
             'Authorization': `${token}`,
