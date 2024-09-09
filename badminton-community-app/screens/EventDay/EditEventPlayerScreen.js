@@ -113,8 +113,11 @@ const EditEventPlayerScreen = ({ route, navigation }) => {
         onValueChange={(itemValue) => handleInputChange('level', itemValue)}
         style={styles.picker}
       >
+        <Picker.Item label="A+" value="A+" />
         <Picker.Item label="A" value="A" />
+        <Picker.Item label="B+" value="B+" />
         <Picker.Item label="B" value="B" />
+        <Picker.Item label="C+" value="C+" />
         <Picker.Item label="C" value="C" />
       </Picker>
 
