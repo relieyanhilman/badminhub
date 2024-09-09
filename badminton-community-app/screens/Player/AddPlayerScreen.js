@@ -155,8 +155,11 @@ const AddPlayerScreen = ({ navigation, route }) => {
       ref={levelRef}
       style={styles.input}>
         <Picker.Item label="Select Level" value="" />
+        <Picker.Item label="Level A+" value="A+" />
         <Picker.Item label="Level A" value="A" />
+        <Picker.Item label="Level B+" value="B+" />
         <Picker.Item label="Level B" value="B" />
+        <Picker.Item label="Level C+" value="C+" />
         <Picker.Item label="Level C" value="C" />
       </Picker>
 
