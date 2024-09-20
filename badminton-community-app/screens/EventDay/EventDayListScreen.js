@@ -100,7 +100,9 @@ const EventDayListScreen = ({ navigation, route }) => {
       }
     } catch (error) {
       console.error('Failed to fetch recap:', error);
-      Alert.alert('Error', 'An error occurred while fetching the recap');
+//      Alert.alert('Error', 'An error occurred while fetching the recap');
+      Alert.alert('Error', error.error);
+
     } finally {
       setLoadingItems((prevLoadingItems) => ({
       ...prevLoadingItems,

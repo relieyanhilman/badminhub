@@ -311,8 +311,6 @@ const PlayerListScreen = ({ navigation, route }) => {
 
   }
 
-
-
   const toggleExpand = (playerId) => {
     setExpandedPlayerIds(prevState =>
       prevState.includes(playerId)
