@@ -65,7 +65,7 @@ const EditEventDayScreen = ({ route, navigation }) => {
         navigation.navigate('EventDayList', { refresh: true, dayIdUpdated: eventDayData.id });
       } else {
         let errorMessage = data.message || 'Failed to update event day';
-        if (response.status === 401) {
+        if (response.statusCode === 401) {
           errorMessage = 'Unauthorized access';
           await SecureStore.deleteItemAsync('userToken');
           navigation.replace('Login');

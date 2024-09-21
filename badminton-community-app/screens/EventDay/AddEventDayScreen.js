@@ -57,7 +57,7 @@ const AddEventDayScreen = ({ navigation, route }) => {
         navigation.navigate('EventDayList', {eventId, refresh: true});
       } else {
         let errorMessage = data.message || 'Failed to add event day';
-        if (response.status === 401) {
+        if (response.statusCode === 401) {
           errorMessage = 'Unauthorized access';
           await SecureStore.deleteItemAsync('userToken');
           navigation.replace('Login');
