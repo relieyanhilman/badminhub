@@ -1,6 +1,6 @@
 // Step 1: Import necessary dependencies
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, Alert, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, Button, Alert, StyleSheet, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform} from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as SecureStore from 'expo-secure-store';
 import { Picker } from '@react-native-picker/picker';
@@ -27,11 +27,11 @@ const AddCashflowScreen = ({navigation}) => {
       return;
     }
     if (type === 'in' && !source) {
-      Alert.alert('Error', 'Source is required for "in" type');
+      Alert.alert('Error', 'Source is required for "income" type');
       return;
     }
     if (type === 'out' && !purpose) {
-      Alert.alert('Error', 'Purpose is required for "out" type');
+      Alert.alert('Error', 'Purpose is required for "expense" type');
       return;
     }
     if (!paymentMethod) {
@@ -103,91 +103,151 @@ const AddCashflowScreen = ({navigation}) => {
   }
 
   return (
-    <View style={{ padding: 20 }}>
-      {/* Step 5a: Select Type */}
-      <Text>Type:</Text>
-      <Picker
-        selectedValue={type}
-        onValueChange={(itemValue) => setType(itemValue)}
+      <KeyboardAvoidingView
+        style={{flex: 1}}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
       >
-        <Picker.Item label="Select Type" value="" />
-        <Picker.Item label="Income" value="in" />
-        <Picker.Item label="Expense" value="out" />
-      </Picker>
+        <ScrollView contentContainerStyle={styles.scrollContainer}>
+            <View style={styles.container}>
+              {/* Step 5a: Select Type */}
+              <Text style={styles.label}>Type:</Text>
+              <Picker
+                selectedValue={type}
+                onValueChange={(itemValue) => setType(itemValue)}
+                style={styles.picker}
+              >
+                <Picker.Item label="Select Type" value="" />
+                <Picker.Item label="Income" value="in" />
+                <Picker.Item label="Expense" value="out" />
+              </Picker>
 
-        <View>
-          <Text>Source: </Text>
-          <TextInput
-            value={source}
-            onChangeText={(text) => setSource(text)}
-            placeholder="Enter Source"
-          />
-        </View>
+              <Text style={styles.label}>Source: </Text>
+              <TextInput
+                value={source}
+                onChangeText={(text) => setSource(text)}
+                placeholder="Enter Source"
+                style={styles.input}
+              />
 
-        <View>
-          <Text>Purpose: </Text>
-          <TextInput
-            value={purpose}
-            onChangeText={(text) => setPurpose(text)}
-            placeholder="Enter Purpose"
-          />
-        </View>
+              <Text style={styles.label}>Purpose: </Text>
+              <TextInput
+                value={purpose}
+                onChangeText={(text) => setPurpose(text)}
+                placeholder="Enter Purpose"
+                style={styles.input}
+              />
 
-      {/* Step 5d: Payment Method */}
-      <Text>Payment Method:</Text>
-      <Picker
-        selectedValue={paymentMethod}
-        onValueChange={(itemValue) => setPaymentMethod(itemValue)}
-      >
-        <Picker.Item label="Select Payment Method" value="" />
-        <Picker.Item label="Cash" value="Cash" />
-        <Picker.Item label="Bank Transfer" value="Bank Transfer" />
-        <Picker.Item label="QRIS" value="QRIS" />
-      </Picker>
+              {/* Step 5d: Payment Method */}
+              <Text style={styles.label}>Payment Method:</Text>
+              <Picker
+                selectedValue={paymentMethod}
+                onValueChange={(itemValue) => setPaymentMethod(itemValue)}
+                style={styles.picker}
+              >
+                <Picker.Item label="Select Payment Method" value="" />
+                <Picker.Item label="Cash" value="Cash" />
+                <Picker.Item label="Bank Transfer" value="Bank Transfer" />
+                <Picker.Item label="QRIS" value="QRIS" />
+              </Picker>
 
-      {/* Step 5e: Date Picker */}
-      <Text style={styles.label}>Date</Text>
-      <TouchableOpacity onPress={() => setShowDatePicker(true)}>
-        <TextInput
-          style={styles.input}
-          placeholder="YYYY-MM-DD"
-          value={date}
-          editable={false}
-        />
-      </TouchableOpacity>
-      {showDatePicker && (
-        <DateTimePicker
-            value={new Date()}
-            mode="date"
-            display="default"
-            onChange={handleDateChange}
-        />
-      )}
+              {/* Step 5e: Date Picker */}
+              <Text style={styles.label}>Date</Text>
+              <TouchableOpacity onPress={() => setShowDatePicker(true)}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="YYYY-MM-DD"
+                  value={date}
+                  editable={false}
+                />
+              </TouchableOpacity>
+              {showDatePicker && (
+                <DateTimePicker
+                    value={new Date()}
+                    mode="date"
+                    display="default"
+                    onChange={handleDateChange}
+                />
+              )}
 
-      {/* Step 5f: Nominal */}
-      <Text>Nominal:</Text>
-      <TextInput
-        value={nominal}
-        onChangeText={(text) => setNominal(text)}
-        keyboardType="numeric"
-        placeholder="Enter Nominal"
-      />
+              {/* Step 5f: Nominal */}
+              <Text style={styles.label}>Nominal:</Text>
+              <TextInput
+                value={nominal}
+                onChangeText={(text) => setNominal(text)}
+                keyboardType="numeric"
+                placeholder="Enter Nominal"
+                style={styles.input}
+              />
 
-      {/* Step 5g: Note */}
-      <Text>Note:</Text>
-      <TextInput
-        value={note}
-        onChangeText={(text) => setNote(text)}
-        placeholder="Enter Note"
-        multiline
-      />
+              {/* Step 5g: Note */}
+              <Text style={styles.label}>Note:</Text>
+              <TextInput
+                style={styles.input}
+                value={note}
+                onChangeText={(text) => setNote(text)}
+                placeholder="Enter Note"
+                multiline
+              />
 
-      {/* Step 6: Submit Button */}
-      <Button title="Submit" onPress={handleSubmit} />
-    </View>
+              {/* Step 6: Submit Button */}
+              <View style={styles.buttonContainer}>
+                <TouchableOpacity onPress={handleSubmit} style={styles.submitButton}>
+                    <Text style={styles.submitButtonText}>ADD CASHFLOW</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
   );
 };
 
-const styles = StyleSheet.create({});
+const styles = StyleSheet.create({
+  scrollContainer: {
+    flexGrow: 1,
+  },
+  container: {
+    flex: 1,
+    padding: 16,
+    backgroundColor: '#f5f5f5', // Warna latar belakang yang sama dengan EventPlayerScreen
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginVertical: 8,
+  },
+  picker: {
+    height: 50,
+    borderColor: 'gray',
+    borderWidth: 1,
+    backgroundColor: '#fff',
+    borderRadius: 5,
+  },
+  input: {
+    height: 50,
+    borderColor: 'gray',
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    backgroundColor: '#fff',
+    borderRadius: 5,
+  },
+  buttonContainer: {
+    marginTop: 20,
+    alignItems: 'center',
+  },
+  submitButton: {
+    backgroundColor: '#007BFF',
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+    alignSelf: 'stretch'
+  },
+  submitButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+    textAlign: 'center'
+  },
+});
 
 export default AddCashflowScreen;
