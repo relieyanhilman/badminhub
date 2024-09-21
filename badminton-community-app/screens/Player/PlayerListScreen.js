@@ -241,11 +241,11 @@ const PlayerListScreen = ({ navigation, route }) => {
       const hasilFilter = [];
       for (const playerItem of players){
         if (playerItem.isMasterPlayer){
-           if(playerItem.name.toLowerCase().includes(query.toLowerCase()) || playerItem.alias.toLowerCase().includes(query.toLowerCase())){
+           if(playerItem.name.toLowerCase().includes(query.toLowerCase()) || playerItem.alias.toLowerCase().includes(query.toLowerCase()) || playerItem.contact.includes(query)) {
              hasilFilter.push(playerItem)
            }
         }else{
-           if(playerItem.player.name.toLowerCase().includes(query.toLowerCase()) || playerItem.player.alias.toLowerCase().includes(query.toLowerCase())){
+           if(playerItem.player.name.toLowerCase().includes(query.toLowerCase()) || playerItem.player.alias.toLowerCase().includes(query.toLowerCase()) || playerItem.player.contact.includes(query)){
              hasilFilter.push(playerItem)
            }
         }
