@@ -1,11 +1,12 @@
 // screens/CashflowScreen.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, FlatList, ActivityIndicator, Button, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { useFocusEffect } from '@react-navigation/native';
 import { Picker } from '@react-native-picker/picker';
 import * as SecureStore from 'expo-secure-store';
 
-const CashflowScreen = () => {
+const CashflowListScreen = ({navigation}) => {
   const [cashflow, setCashflow] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -14,9 +15,12 @@ const CashflowScreen = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedType, setSelectedType] = useState('');
 
-  useEffect(() => {
-    fetchCashflow();
-  }, [])
+  useFocusEffect(
+    useCallback(() => {
+        fetchCashflow();
+    }, [])
+  )
+
 
   const fetchCashflow = async (page = 1, perPage = 10, search = '', type = '') => {
     if (page > totalPages && page !== 1) return; // Stop fetching if we're past the last page
@@ -92,6 +96,10 @@ const CashflowScreen = () => {
      fetchCashflow(1, 10, searchQuery, type);  // Fetch ulang data berdasarkan filter baru
   };
 
+  const handleAddCashflow = () => {
+    navigation.navigate('AddCashflow')
+  }
+
 const renderItem = ({ item }) => {
   const isInflow = item.type === 'in'; // Cek apakah transaksi adalah pemasukan
   const itemStyle = [styles.item, isInflow ? styles.inflow : styles.outflow];
@@ -138,7 +146,7 @@ const renderItem = ({ item }) => {
         onChangeText={setSearchQuery}
         onSubmitEditing={handleSearchSubmit}
       />
-      <Button title="Add Cashflow" onPress={() => openModal()} />
+      <Button title="Add Cashflow" onPress={() => handleAddCashflow()} />
 
       <View style={styles.filterContainer}>
        <TouchableOpacity
@@ -151,13 +159,13 @@ const renderItem = ({ item }) => {
          style={[styles.filterButton, selectedType === 'in' && styles.activeFilter]}
          onPress={() => handleTypeFilter('in')}
        >
-         <Text style={styles.filterText}>In</Text>
+         <Text style={styles.filterText}>Income</Text>
        </TouchableOpacity>
        <TouchableOpacity
          style={[styles.filterButton, selectedType === 'out' && styles.activeFilter]}
          onPress={() => handleTypeFilter('out')}
        >
-         <Text style={styles.filterText}>Out</Text>
+         <Text style={styles.filterText}>Expense</Text>
        </TouchableOpacity>
       </View>
 
@@ -258,4 +266,4 @@ const styles = StyleSheet.create({
 
 
 
-export default CashflowScreen;
+export default CashflowListScreen;

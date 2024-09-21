@@ -9,7 +9,7 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 import LoginScreen from '../screens/LoginScreen';
 import LogoutScreen from '../screens/LogoutScreen'
 import DashboardScreen from '../screens/DashboardScreen';
-import CashflowScreen from '../screens/Cashflow/CashflowListScreen';
+import CashflowStackNavigator from './CashflowStackNavigator';
 import EventStackNavigator from './EventStackNavigator';
 
 const Stack = createStackNavigator();
@@ -59,7 +59,7 @@ const MainTabs = ({route, navigation}) => {
       })}
   >
     <Tab.Screen name="Dashboard" component={DashboardScreen} options={{ title: 'Dashboard' }} />
-    <Tab.Screen name="Cashflow" component={CashflowScreen} options={{ title: 'Cashflow' }}/>
+    <Tab.Screen name="Cashflow" component={CashflowStackNavigator} options={{ headerShown: false }}/>
     <Tab.Screen name="Events" component={EventStackNavigator} options={{ title: 'Events', headerShown: false }}/>
     <Tab.Screen name="Logout" options={{headerShown: false }}>
        {props => <LogoutScreen {...props} lastTabRef={lastTabRef} />}
