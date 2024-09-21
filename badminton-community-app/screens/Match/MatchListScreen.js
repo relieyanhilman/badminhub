@@ -241,9 +241,8 @@ const MatchListScreen = ({ navigation, route }) => {
         data={matches}
         renderItem={renderItem}
         keyExtractor={item => item.id.toString()}
-        contentContainerStyle={styles.container}
+        contentContainerStyle={[styles.container, {paddingBottom: 16}]}
         style={{ flex: 1 }} // Memastikan FlatList mengambil seluruh tinggi container
-        contentContainerStyle={{ paddingBottom: 16 }} // Menambahkan padding di bagian bawah
         refreshing={refreshing}
         onRefresh={onRefresh}
       />

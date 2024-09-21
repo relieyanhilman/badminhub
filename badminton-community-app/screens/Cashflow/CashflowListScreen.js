@@ -22,6 +22,9 @@ const CashflowListScreen = ({navigation}) => {
     balance: '',
   })
 
+  //state untuk fungsi pull to refresh
+  const [refreshing, setRefreshing] = useState(false)
+
   useFocusEffect(
     useCallback(() => {
         fetchCashflow();
@@ -93,6 +96,7 @@ const CashflowListScreen = ({navigation}) => {
     }finally{
       setLoading(false);
       setLoadingMore(false);
+      setRefreshing(false);
     }
   }
 
@@ -109,6 +113,11 @@ const CashflowListScreen = ({navigation}) => {
 
   const handleAddCashflow = () => {
     navigation.navigate('AddCashflow')
+  }
+
+  const onRefresh = () => {
+    setRefreshing(true)
+    fetchCashflow(search=searchQuery, type=selectedType)
   }
 
 const renderItem = ({ item }) => {
@@ -183,15 +192,15 @@ const renderItem = ({ item }) => {
       <View style={styles.cashFlowSummaryContainer}>
         <View style={styles.itemSummary}>
             <Text style={[styles.summaryText, {fontWeight: 'bold'}]}>Income</Text>
-            <Text style={styles.summaryText}>Rp{summaryCashflow.income}</Text>
+            <Text style={styles.summaryText}>{summaryCashflow.income}</Text>
         </View>
         <View style={styles.itemSummary}>
             <Text style={[styles.summaryText, {fontWeight: 'bold'}]}>Expense</Text>
-            <Text style={styles.summaryText}>Rp{summaryCashflow.expense}</Text>
+            <Text style={styles.summaryText}>{summaryCashflow.expense}</Text>
         </View>
         <View style={styles.itemSummary}>
             <Text style={[styles.summaryText, {fontWeight: 'bold'}]}>Balance</Text>
-            <Text style={styles.summaryText}>Rp{summaryCashflow.balance}</Text>
+            <Text style={styles.summaryText}>{summaryCashflow.balance}</Text>
         </View>
       </View>
 
@@ -205,6 +214,8 @@ const renderItem = ({ item }) => {
         onEndReached={() => fetchCashflow(currentPage + 1, 10, searchQuery, selectedType)}
         onEndReachedThreshold={0.5}
         ListFooterComponent={loadingMore ? <ActivityIndicator size="small" color="#0000ff" /> : null}
+        refreshing={refreshing}
+        onRefresh={onRefresh}
       />
       )}
     </View>
