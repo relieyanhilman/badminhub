@@ -232,8 +232,6 @@ const PlayerListScreen = ({ navigation, route }) => {
     )
   }
 
-
-
   const applySearchFilter = (players, query) => {
     if (!query){
       return players
@@ -241,11 +239,15 @@ const PlayerListScreen = ({ navigation, route }) => {
       const hasilFilter = [];
       for (const playerItem of players){
         if (playerItem.isMasterPlayer){
-           if(playerItem.name.toLowerCase().includes(query.toLowerCase()) || playerItem.alias.toLowerCase().includes(query.toLowerCase()) || playerItem.contact.includes(query)) {
+           if(playerItem.name.toLowerCase().includes(query.toLowerCase()) ||
+           playerItem.alias.toLowerCase().includes(query.toLowerCase()) ||
+           playerItem.contact.includes(query)) {
              hasilFilter.push(playerItem)
            }
         }else{
-           if(playerItem.player.name.toLowerCase().includes(query.toLowerCase()) || playerItem.player.alias.toLowerCase().includes(query.toLowerCase()) || playerItem.player.contact.includes(query)){
+           if(playerItem.player.name.toLowerCase().includes(query.toLowerCase()) ||
+           playerItem.player.alias.toLowerCase().includes(query.toLowerCase()) ||
+           playerItem.player.contact.includes(query)){
              hasilFilter.push(playerItem)
            }
         }
@@ -408,7 +410,7 @@ const PlayerListScreen = ({ navigation, route }) => {
       <View style={styles.buttonContainer}>
         <TextInput
           style={styles.searchInput}
-          placeholder="Search by name or alias"
+          placeholder="Search by name, alias, or contact"
           value={searchQuery}
           onChangeText={handleSearch}
         />
