@@ -1,7 +1,7 @@
 // Match/MatchListScreen.js
 import React, {useState, useEffect, useCallback} from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import { View, Text, FlatList, Button, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, Button, StyleSheet, Alert, ActivityIndicator, TextInput } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 
 const MatchListScreen = ({ navigation, route }) => {
@@ -15,10 +15,18 @@ const MatchListScreen = ({ navigation, route }) => {
   const [totalParticipants, setTotalParticipants] = useState(0); // State for total participants
   const [totalMatches, setTotalMatches] = useState(0); // State for total matches
 
+  //state untuk mendukung search function
+  const [searchQuery, setSearchQuery] = useState('')
+  const [filteredMatches, setFilteredMatches] = useState([])
+
   useEffect(() => {
     fetchMatches()
     fetchSummary()
   }, []);
+
+  useEffect(() => {
+    applySearchFilter()
+  }, [searchQuery, matches])
 
   useFocusEffect(
       useCallback(() => {
@@ -31,7 +39,7 @@ const MatchListScreen = ({ navigation, route }) => {
       }, [route.params?.refresh])
   );
 
-    const fetchMatches = async () => {
+  const fetchMatches = async () => {
       try {
       const token = await SecureStore.getItemAsync('userToken');
         const response = await fetch(`https://apiv2.pbbedahulu.my.id/mabar/day/${dayId}`, {
@@ -51,6 +59,8 @@ const MatchListScreen = ({ navigation, route }) => {
               return dateB - dateA; // Sort by newest start_time first
             });
           setMatches(sortedMatches);
+
+          applySearchFilter(sortedMatches)
         } else {
           setError(result.message || 'Failed to retrieve data');
         }
@@ -119,6 +129,27 @@ const MatchListScreen = ({ navigation, route }) => {
     }
   };
 
+  const applySearchFilter = (matchList=matches) => {
+    if (!searchQuery){
+        setFilteredMatches(matchList)
+    }
+
+    const filterResult = [];
+
+    for (const matchItem of matchList){
+        if(matchItem.player_name_a1.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        matchItem.player_alias_a1.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        matchItem.player_name_a2.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        matchItem.player_alias_a2.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        matchItem.player_name_b1.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        matchItem.player_alias_b1.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        matchItem.player_name_b2.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        matchItem.player_alias_b2.toLowerCase().includes(searchQuery.toLowerCase()) ){
+            filterResult.push(matchItem)
+        }
+    }
+    setFilteredMatches(filterResult)
+  }
 
   const handleAddMatch = () => {
     navigation.navigate('AddMatch', {dayId});
@@ -223,6 +254,15 @@ const MatchListScreen = ({ navigation, route }) => {
 
   return (
     <View style={styles.container}>
+
+      <View style={styles.searchContainer}>
+        <TextInput
+            style={styles.searchInput}
+            value={searchQuery}
+            onChangeText={(query) => setSearchQuery(query)}
+            placeholder="Search match by player name/ alias"
+        />
+      </View>
       <Button title="Add Match" onPress={handleAddMatch} />
       <View style={styles.summaryContainer}>
 
@@ -238,12 +278,12 @@ const MatchListScreen = ({ navigation, route }) => {
 
       </View>
       <FlatList
-        data={matches}
+        data={filteredMatches}
         renderItem={renderItem}
         keyExtractor={item => item.id.toString()}
         contentContainerStyle={styles.container}
-        style={{ flex: 1 }} // Memastikan FlatList mengambil seluruh tinggi container
         contentContainerStyle={{ paddingBottom: 16 }} // Menambahkan padding di bagian bawah
+        style={{ flex: 1 }} // Memastikan FlatList mengambil seluruh tinggi container
         refreshing={refreshing}
         onRefresh={onRefresh}
       />
@@ -255,6 +295,16 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
+  },
+  searchContainer: {
+    marginBottom: 7
+  },
+  searchInput: {
+    height: 40,
+    borderColor: '#ccc',
+    borderWidth: 1,
+    borderRadius: 5,
+    paddingHorizontal: 10,
   },
   summaryContainer: {
     flexDirection: 'row',

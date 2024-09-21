@@ -243,7 +243,9 @@ const EventPlayerScreen = ({ route, navigation }) => {
     }
       const hasilFilter = [];
       for (const playerItem of players){
-           if(playerItem.player.name.toLowerCase().includes(query.toLowerCase()) || playerItem.player.alias.toLowerCase().includes(query.toLowerCase())){
+           if(playerItem.player.name.toLowerCase().includes(query.toLowerCase()) ||
+           playerItem.player.alias.toLowerCase().includes(query.toLowerCase()) ||
+           playerItem.player.contact.includes(query)){
              hasilFilter.push(playerItem)
            }
       }

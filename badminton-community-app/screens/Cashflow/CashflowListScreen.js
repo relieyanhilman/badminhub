@@ -15,12 +15,21 @@ const CashflowListScreen = ({navigation}) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedType, setSelectedType] = useState('');
 
+  //state untuk menyimpan summary cashflow
+  const [summaryCashflow, setSummaryCashflow] = useState({
+    income: '',
+    expense: '',
+    balance: '',
+  })
+
+  //state untuk fungsi pull to refresh
+  const [refreshing, setRefreshing] = useState(false)
+
   useFocusEffect(
     useCallback(() => {
         fetchCashflow();
     }, [])
   )
-
 
   const fetchCashflow = async (page = 1, perPage = 10, search = '', type = '') => {
     if (page > totalPages && page !== 1) return; // Stop fetching if we're past the last page
@@ -73,6 +82,11 @@ const CashflowListScreen = ({navigation}) => {
          setCashflow(mergedCashflow);
          setTotalPages(dataCashflowUnstructed.pagination.totalPages);
          setCurrentPage(dataCashflowUnstructed.pagination.currentPage);
+         setSummaryCashflow({
+            income: dataCashflowUnstructed.totalIn,
+            expense: dataCashflowUnstructed.totalOut,
+            balance: dataCashflowUnstructed.balance
+         })
        } else{
           console.error('Failed to fetch cashflow:', data.message);
        }
@@ -82,6 +96,7 @@ const CashflowListScreen = ({navigation}) => {
     }finally{
       setLoading(false);
       setLoadingMore(false);
+      setRefreshing(false);
     }
   }
 
@@ -98,6 +113,11 @@ const CashflowListScreen = ({navigation}) => {
 
   const handleAddCashflow = () => {
     navigation.navigate('AddCashflow')
+  }
+
+  const onRefresh = () => {
+    setRefreshing(true)
+    fetchCashflow(search=searchQuery, type=selectedType)
   }
 
 const renderItem = ({ item }) => {
@@ -169,6 +189,21 @@ const renderItem = ({ item }) => {
        </TouchableOpacity>
       </View>
 
+      <View style={styles.cashFlowSummaryContainer}>
+        <View style={styles.itemSummary}>
+            <Text style={[styles.summaryText, {fontWeight: 'bold'}]}>Income</Text>
+            <Text style={styles.summaryText}>{summaryCashflow.income}</Text>
+        </View>
+        <View style={styles.itemSummary}>
+            <Text style={[styles.summaryText, {fontWeight: 'bold'}]}>Expense</Text>
+            <Text style={styles.summaryText}>{summaryCashflow.expense}</Text>
+        </View>
+        <View style={styles.itemSummary}>
+            <Text style={[styles.summaryText, {fontWeight: 'bold'}]}>Balance</Text>
+            <Text style={styles.summaryText}>{summaryCashflow.balance}</Text>
+        </View>
+      </View>
+
       {loading? (
         <ActivityIndicator size="large" color="#0000ff" />
       ) : (
@@ -179,6 +214,8 @@ const renderItem = ({ item }) => {
         onEndReached={() => fetchCashflow(currentPage + 1, 10, searchQuery, selectedType)}
         onEndReachedThreshold={0.5}
         ListFooterComponent={loadingMore ? <ActivityIndicator size="small" color="#0000ff" /> : null}
+        refreshing={refreshing}
+        onRefresh={onRefresh}
       />
       )}
     </View>
@@ -218,7 +255,23 @@ const styles = StyleSheet.create({
      color: '#fff',
      fontWeight: 'bold',
    },
-  item: {
+   cashFlowSummaryContainer: {
+     flexDirection: 'row',
+     justifyContent: 'space-around',
+     padding: 8,
+     backgroundColor: 'white', // Warna abu-abu lembut
+     borderRadius: 8,
+     marginTop: 7,
+     marginBottom: 10
+   },
+   itemSummary: {
+     alignItems: 'center',
+   },
+   summaryText: {
+     fontSize: 15,
+     color: '#555',
+   },
+   item: {
     backgroundColor: '#fff',
     padding: 16,
     borderRadius: 8,
