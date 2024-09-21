@@ -1,6 +1,6 @@
 // Step 1: Import necessary dependencies
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, Alert, StyleSheet, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform} from 'react-native';
+import { View, Text, TextInput, Button, Alert, StyleSheet, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator} from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as SecureStore from 'expo-secure-store';
 import { Picker } from '@react-native-picker/picker';
@@ -18,6 +18,9 @@ const AddCashflowScreen = ({navigation}) => {
 
   //state untuk mengelola DatePicker
   const [showDatePicker, setShowDatePicker] = useState(false);
+
+  //state untuk tracking loading saat 'add cashflow'
+  const [loading, setLoading] = useState(false);
 
   // Step 3: Define handleSubmit function
   const handleSubmit = async () => {
@@ -52,6 +55,9 @@ const AddCashflowScreen = ({navigation}) => {
     }
 
     try{
+      if (loading) return;
+      setLoading(true)
+
       const token = await SecureStore.getItemAsync('userToken');
       if (!token) {
         throw new Error('User token not found');
@@ -77,21 +83,32 @@ const AddCashflowScreen = ({navigation}) => {
       const data = await response.json();
 
       if (response.ok) {
-        Alert.alert('Success', 'Cashflow data added successfully');
-        navigation.navigate('CashflowList')
+        Alert.alert('Success', 'Cashflow data added successfully',
+        [
+            {
+                text: 'OK',
+                onPress: () => {
+                    setLoading(false);
+                    navigation.navigate('CashflowList')
+                }
+            }
+        ]
+        );
       } else {
         let errorMessage = data.message || 'Failed to add cashflow data';
         if (response.statusCode === 401) {
           errorMessage = 'Unauthorized access';
           await SecureStore.deleteItemAsync('userToken');
+          setLoading(false)
           navigation.replace('Login');
         }
         Alert.alert('Error', errorMessage);
+        setLoading(false)
       }
     }catch(err){
         console.log(err)
         Alert.alert('Error', err.message);
-
+        setLoading(false)
     }
   };
 
@@ -192,8 +209,15 @@ const AddCashflowScreen = ({navigation}) => {
 
               {/* Step 6: Submit Button */}
               <View style={styles.buttonContainer}>
-                <TouchableOpacity onPress={handleSubmit} style={styles.submitButton}>
-                    <Text style={styles.submitButtonText}>ADD CASHFLOW</Text>
+                <TouchableOpacity
+                    onPress={handleSubmit}
+                    style={[styles.submitButton, loading && styles.submitButtonDisabled]}
+                    disabled={loading}>
+                        {loading ? (
+                            <ActivityIndicator size="small" color="#fff" />
+                            ) : (
+                                <Text style={styles.submitButtonText}>ADD CASHFLOW</Text>
+                        )}
                 </TouchableOpacity>
               </View>
             </View>
@@ -241,6 +265,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     borderRadius: 5,
     alignSelf: 'stretch'
+  },
+  submitButtonDisabled: {
+    opacity: 0.6
   },
   submitButtonText: {
     color: '#fff',
