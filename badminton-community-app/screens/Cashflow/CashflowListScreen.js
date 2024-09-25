@@ -120,6 +120,15 @@ const CashflowListScreen = ({navigation}) => {
     fetchCashflow(search=searchQuery, type=selectedType)
   }
 
+  //define dedicated function to convert the summary cashflow to IDR format
+  const convertToRupiah = (value) => {
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      maximumFractionDigits: 0
+    }).format(value);
+  }
+
 const renderItem = ({ item }) => {
   const isInflow = item.type === 'in'; // Cek apakah transaksi adalah pemasukan
   const itemStyle = [styles.item, isInflow ? styles.inflow : styles.outflow];
@@ -192,15 +201,15 @@ const renderItem = ({ item }) => {
       <View style={styles.cashFlowSummaryContainer}>
         <View style={styles.itemSummary}>
             <Text style={[styles.summaryText, {fontWeight: 'bold'}]}>Income</Text>
-            <Text style={styles.summaryText}>{summaryCashflow.income}</Text>
+            <Text style={styles.summaryText}>{convertToRupiah(summaryCashflow.income)}</Text>
         </View>
         <View style={styles.itemSummary}>
             <Text style={[styles.summaryText, {fontWeight: 'bold'}]}>Expense</Text>
-            <Text style={styles.summaryText}>{summaryCashflow.expense}</Text>
+            <Text style={styles.summaryText}>{convertToRupiah(summaryCashflow.expense)}</Text>
         </View>
         <View style={styles.itemSummary}>
             <Text style={[styles.summaryText, {fontWeight: 'bold'}]}>Balance</Text>
-            <Text style={styles.summaryText}>{summaryCashflow.balance}</Text>
+            <Text style={styles.summaryText}>{convertToRupiah(summaryCashflow.balance)}</Text>
         </View>
       </View>
 
