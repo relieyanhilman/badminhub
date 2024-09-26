@@ -3,6 +3,7 @@ import React, { useState, useEffect, useContext, useMemo, useCallback } from 're
 import { View, Text, TextInput, Button, StyleSheet, Alert, ActivityIndicator, ScrollView, FlatList, TouchableOpacity } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { EventContext } from '../../EventContext';
+import {MatchContext} from '../../EventContext';
 import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
@@ -36,6 +37,9 @@ const EditMatchScreen = ({ route, navigation }) => {
   const [loading, setLoading] = useState(true);
   const [courtLoading, setCourtLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  //Context Match untuk update PlayerListScreen setiap update match
+  const {setMatchUpdated} = useContext(MatchContext)
 
   const [courtId, setCourtId] = useState(match.court_id.toString());
   const [playerIdA1, setPlayerIdA1] = useState(match.player_id_a1.toString());
@@ -223,6 +227,7 @@ const EditMatchScreen = ({ route, navigation }) => {
 
       const result = await response.json();
       if (result.success) {
+        setMatchUpdated(true);
         Alert.alert('Success', 'Match updated successfully.');
         navigation.navigate("MatchList", {refresh: true});
       } else {
