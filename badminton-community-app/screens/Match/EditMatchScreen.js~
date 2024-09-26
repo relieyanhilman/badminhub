@@ -1,9 +1,8 @@
-// Match/AddMatchScreen.js
+// Match/EditMatchScreen.js
 import React, { useState, useEffect, useContext, useMemo, useCallback } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Alert, ActivityIndicator, ScrollView, FlatList, TouchableOpacity} from 'react-native';
+import { View, Text, TextInput, Button, StyleSheet, Alert, ActivityIndicator, ScrollView, FlatList, TouchableOpacity } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { EventContext } from '../../EventContext';
-import { MatchContext } from '../../EventContext';
 import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
@@ -29,34 +28,39 @@ const PlayerList = React.memo(({ filteredAttendees, showAllPlayers, setShowAllPl
   </>
 ));
 
-const AddMatchScreen = ({ navigation, route }) => {
-  const {eventHallId} = useContext(EventContext)
-  const { dayId } = route.params;
+const EditMatchScreen = ({ route, navigation }) => {
+  const { eventHallId } = useContext(EventContext);
+  const { dayId, match } = route.params; // Menerima data match yang akan diedit
   const [attendees, setAttendees] = useState([]);
   const [courts, setCourts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [courtLoading, setCourtLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  //Context Match untuk update PlayerListScreen setiap update match
-  const {setMatchUpdated} = useContext(MatchContext)
+  const [courtId, setCourtId] = useState(match.court_id.toString());
+  const [playerIdA1, setPlayerIdA1] = useState(match.player_id_a1.toString());
+  const [playerNameA1, setPlayerNameA1] = useState(match.player_name_a1); // State untuk menyimpan nama pemain A1
+  const [playerLevelA1, setPlayerLevelA1] = useState(match.player_level_a1);
 
-  const [courtId, setCourtId] = useState('');
-  const [playerIdA1, setPlayerIdA1] = useState('');
-  const [playerNameA1, setPlayerNameA1] = useState(''); // State untuk menyimpan nama pemain A1
-  const [playerLevelA1, setPlayerLevelA1] = useState('');
-  const [playerIdA2, setPlayerIdA2] = useState('');
-  const [playerNameA2, setPlayerNameA2] = useState(''); // State untuk menyimpan nama pemain A2
-  const [playerLevelA2, setPlayerLevelA2] = useState('');
-  const [playerIdB1, setPlayerIdB1] = useState('');
-  const [playerNameB1, setPlayerNameB1] = useState(''); // State untuk menyimpan nama pemain B1
-  const [playerLevelB1, setPlayerLevelB1] = useState('');
-  const [playerIdB2, setPlayerIdB2] = useState('');
-  const [playerNameB2, setPlayerNameB2] = useState(''); // State untuk menyimpan nama pemain B2
-  const [playerLevelB2, setPlayerLevelB2] = useState('');
-  const [startTime, setStartTime] = useState(new Date());
-  const [showTimePicker, setShowTimePicker] = useState(false);
-  const [note, setNote] = useState('');
+  const [playerIdA2, setPlayerIdA2] = useState(match.player_id_a2.toString());
+  const [playerNameA2, setPlayerNameA2] = useState(match.player_name_a2); // State untuk menyimpan nama pemain A2
+  const [playerLevelA2, setPlayerLevelA2] = useState(match.player_level_a2);
+
+  const [playerIdB1, setPlayerIdB1] = useState(match.player_id_b1.toString());
+  const [playerNameB1, setPlayerNameB1] = useState(match.player_name_b1); // State untuk menyimpan nama pemain B1
+  const [playerLevelB1, setPlayerLevelB1] = useState(match.player_level_b1);
+
+  const [playerIdB2, setPlayerIdB2] = useState(match.player_id_b2.toString());
+  const [playerNameB2, setPlayerNameB2] = useState(match.player_name_b2); // State untuk menyimpan nama pemain B2
+  const [playerLevelB2, setPlayerLevelB2] = useState(match.player_level_b2);
+
+  const [startTime, setStartTime] = useState(new Date(`2024-01-01T${match.start_time}`));
+  const [endTime, setEndTime] = useState(match.end_time ?  new Date(`2024-01-01T${match.end_time}`) : new Date());
+  const [score, setScore] = useState(match.score || '');
+  const [shuttlecockUsed, setShuttlecockUsed] = useState(match.shuttlecock_used?.toString() || 0);
+  const [note, setNote] = useState(match.note || '');
+  const [showStartTimePicker, setShowStartTimePicker] = useState(false);
+  const [showEndTimePicker, setShowEndTimePicker] = useState(false);
 
   // State for search query
   const [searchQueryA1, setSearchQueryA1] = useState('');
@@ -82,7 +86,7 @@ const AddMatchScreen = ({ navigation, route }) => {
 
   useEffect(() => {
     fetchAttendees();
-    fetchCourts()
+    fetchCourts();
   }, []);
 
   useEffect(() => {
@@ -135,9 +139,9 @@ const AddMatchScreen = ({ navigation, route }) => {
       });
 
       const result = await response.json();
+
       if (result.success) {
         setAttendees(result.data.attendees);
-
       } else {
         setError(result.message || 'Failed to retrieve attendees data');
       }
@@ -179,20 +183,26 @@ const AddMatchScreen = ({ navigation, route }) => {
   };
 
   const handleSaveMatch = async () => {
-    if (!courtId || !playerIdA1 || !playerIdA2 || !playerIdB1 || !playerIdB2 || !startTime) {
+    if (!courtId || !playerIdA1 || !playerIdA2 || !playerIdB1 || !playerIdB2 || !startTime || !endTime) {
       Alert.alert('Error', 'Please fill in all required fields.');
       return;
     }
-    try {
 
+    if (endTime && formattedEndTime < formattedStartTime) {
+      Alert.alert('Error', 'End time cannot be earlier than start time.');
+      return;
+    }
+
+    try {
       const token = await SecureStore.getItemAsync('userToken');
-      const response = await fetch('https://apiv2.pbbedahulu.my.id/mabar/match/create', {
+      const response = await fetch('https://apiv2.pbbedahulu.my.id/mabar/match/update', {
         method: 'POST',
         headers: {
           'Authorization': token,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          id: match.id,
           open_mabar_day_id: dayId,
           court_id: parseInt(courtId),
           player_id_a1: parseInt(playerIdA1),
@@ -204,28 +214,37 @@ const AddMatchScreen = ({ navigation, route }) => {
           player_id_b2: parseInt(playerIdB2),
           player_level_b2: playerLevelB2,
           start_time: formattedStartTime,
-          note: note,
+          end_time: formattedEndTime,
+          score: score,
+          shuttlecock_used: parseInt(shuttlecockUsed) || 0,
+          note: note ,
         }),
       });
 
       const result = await response.json();
-
       if (result.success) {
-        setMatchUpdated(true);
-        Alert.alert('Success', 'Match added successfully.');
+        Alert.alert('Success', 'Match updated successfully.');
         navigation.navigate("MatchList", {refresh: true});
       } else {
-        Alert.alert('Error', result.message || 'Failed to add match.');
+        Alert.alert('Error', result.message || 'Failed to update match.');
       }
     } catch (error) {
-      Alert.alert('Error', 'An error occurred while adding the match.');
+      console.log(error)
+      Alert.alert('Error', 'An error occurred while updating the match.');
     }
   };
 
-  const onChangeTime = (event, selectedTime) => {
-    setShowTimePicker(false);
+  const onChangeStartTime = (event, selectedTime) => {
+    setShowStartTimePicker(false);
     if (selectedTime) {
-      setStartTime(selectedTime); // Update waktu jika pengguna memilih waktu
+      setStartTime(selectedTime);
+    }
+  };
+
+  const onChangeEndTime = (event, selectedTime) => {
+    setShowEndTimePicker(false);
+    if (selectedTime) {
+      setEndTime(selectedTime);
     }
   };
 
@@ -235,6 +254,11 @@ const AddMatchScreen = ({ navigation, route }) => {
       .padStart(2, '0')}:${startTime.getSeconds().toString().padStart(2, '0')}`;
   }, [startTime]);
 
+  const formattedEndTime = useMemo(() => {
+    return endTime instanceof Date
+          ? `${endTime.getHours().toString().padStart(2, '0')}:${endTime.getMinutes().toString().padStart(2, '0')}:${endTime.getSeconds().toString().padStart(2, '0')}`
+          : new Date();
+  },[endTime]);
 
   const handleSelectPlayer = useCallback(
     (playerId, setPlayerId, setPlayerName, setPlayerLevel, setSearchQuery, setShowSearch, setShowAllPlayers) => {
@@ -249,7 +273,7 @@ const AddMatchScreen = ({ navigation, route }) => {
     [attendees]
   );
 
-  if (loading || courtLoading ) {
+  if (loading || courtLoading) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#0000ff" />
@@ -271,7 +295,7 @@ const AddMatchScreen = ({ navigation, route }) => {
       data={[]}
             keyExtractor={() => "key"}
             ListHeaderComponent={
-      <View style={styles.container}>
+       <View style={styles.container}>
 
         <Text style={styles.label}>Court</Text>
         <Picker
@@ -279,13 +303,8 @@ const AddMatchScreen = ({ navigation, route }) => {
           style={styles.input}
           onValueChange={(itemValue) => setCourtId(itemValue)}
         >
-       <Picker.Item label="Select Court" value="" />
           {courts.map((court) => (
-            <Picker.Item
-              key={court.id}
-              label={court.name}
-              value={court.id}
-            />
+            <Picker.Item key={court.id} label={court.name} value={court.id.toString()} />
           ))}
         </Picker>
 
@@ -317,7 +336,6 @@ const AddMatchScreen = ({ navigation, route }) => {
             </>
           )}
 
-
           {/* Player A2 */}
           <Text style={styles.label}>Player A2 {playerNameA2 !== '' && (
                                                                <Text style={styles.selectedPlayerText}>
@@ -346,8 +364,6 @@ const AddMatchScreen = ({ navigation, route }) => {
               />
             </>
           )}
-
-
 
           {/* Player B1 */}
           <Text style={styles.label}>Player B1 {playerNameB1 !== '' && (
@@ -409,29 +425,61 @@ const AddMatchScreen = ({ navigation, route }) => {
 
         <Text style={styles.label}>Start Time {formattedStartTime !== null ? <Text style={styles.timeText}>: {formattedStartTime}</Text> : null}</Text>
         <View>
-            <TouchableOpacity style={styles.button} onPress={() => setShowTimePicker(true)}>
+            <TouchableOpacity style={styles.button} onPress={() => setShowStartTimePicker(true)}>
               <Text style={styles.buttonText}>Select Start Time</Text>
             </TouchableOpacity>
         </View>
-        {showTimePicker && (
+        {showStartTimePicker && (
           <DateTimePicker
             value={startTime}
             mode="time"
             display="default"
-            onChange={onChangeTime}
+            onChange={onChangeStartTime}
           />
         )}
 
-      <Text style={styles.label}>Note</Text>
-      <TextInput
-        style={styles.input}
-        value={note}
-        onChangeText={setNote}
-        placeholder="Enter Note (optional)"
-      />
+        <Text style={styles.label}>End Time {formattedEndTime !== null ? <Text style={styles.timeText}>: {formattedEndTime}</Text> : null}</Text>
+        <View>
+            <TouchableOpacity style={styles.button} onPress={() => setShowEndTimePicker(true)}>
+              <Text style={styles.buttonText}>Select End Time</Text>
+            </TouchableOpacity>
+        </View>
+        {showEndTimePicker && (
+          <DateTimePicker
+            value={endTime}
+            mode="time"
+            display="default"
+            onChange={onChangeEndTime}
+          />
+        )}
 
-      <Button title="Save Match" onPress={handleSaveMatch} />
-    </View>
+        <Text style={styles.label}>Score</Text>
+        <TextInput
+          style={styles.input}
+          value={score}
+          onChangeText={setScore}
+          placeholder="Enter Score (optional)"
+        />
+
+        <Text style={styles.label}>Shuttlecocks Used</Text>
+        <TextInput
+          style={styles.input}
+          value={shuttlecockUsed}
+          onChangeText={setShuttlecockUsed}
+          keyboardType="numeric"
+          placeholder="Enter Shuttlecocks Used (optional)"
+        />
+
+        <Text style={styles.label}>Note</Text>
+        <TextInput
+          style={styles.input}
+          value={note}
+          onChangeText={setNote}
+          placeholder="Enter Note (optional)"
+        />
+
+        <Button title="Update Match" onPress={handleSaveMatch} />
+      </View>
     }
     />
   );
@@ -503,8 +551,6 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     alignItems: 'center',
   },
-
-
 });
 
-export default AddMatchScreen;
+export default EditMatchScreen;

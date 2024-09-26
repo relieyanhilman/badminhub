@@ -7,6 +7,7 @@ import {Ionicons} from '@expo/vector-icons';
 import * as SecureStore from 'expo-secure-store';
 
 import { EventContext } from '../../EventContext';
+import {MatchContext} from '../../EventContext';
 
 const PlayerListScreen = ({ navigation, route }) => {
   const { dayId } = route.params;
@@ -37,6 +38,9 @@ const PlayerListScreen = ({ navigation, route }) => {
   //untuk men-trigger refresh di EventPlayerScreen
   const { triggerRefresh } = useContext(EventContext);
 
+  //untuk menerima trigger refresh dari addMatchScreen atau editMatchScreen
+  const {matchUpdated, setMatchUpdated} = useContext(MatchContext);
+
   useEffect(() => {
     fetchPlayers();
   }, []);
@@ -54,6 +58,13 @@ const PlayerListScreen = ({ navigation, route }) => {
   useEffect(() => {
      applyFiltersAndSearch();
   }, [searchQuery, players, masterPlayers]);
+
+  useEffect(() => {
+      if (matchUpdated) {
+        fetchPlayers();
+        setMatchUpdated(false);
+      }
+    }, [matchUpdated]);
 
   const fetchPlayers = async (isRefreshing = false) => {
     if (!isRefreshing) {
