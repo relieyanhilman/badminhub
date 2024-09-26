@@ -136,7 +136,8 @@ const AddMatchScreen = ({ navigation, route }) => {
 
       const result = await response.json();
       if (result.success) {
-        setAttendees(result.data.attendees);
+        //filter attendees hanya attendees yang berstatus idle.
+        setAttendees(result.data.attendees.filter(attendee => attendee.status === 0));
 
       } else {
         setError(result.message || 'Failed to retrieve attendees data');

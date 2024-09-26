@@ -65,7 +65,7 @@ const PlayerListScreen = ({ navigation, route }) => {
         setMatchUpdated(false);
       }
     }, [matchUpdated]);
-    
+
   const fetchPlayers = async (isRefreshing = false) => {
     if (!isRefreshing) {
         setLoading(true)
@@ -337,7 +337,7 @@ const StatusIcon = ({ status }) => {
   let color;
   let iconName;
 
-  switch (status) {
+  switch (status.status) {
     case 'playing':
       color = '#34C759'; // hijau
       iconName = 'radio-button-on';
@@ -359,7 +359,7 @@ const StatusIcon = ({ status }) => {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
       <Ionicons name={iconName} size={16} color={color} />
-      <Text style={{ marginLeft: 5 }}>{status}</Text>
+      <Text style={{ marginLeft: 5 }}>{status.status_info}</Text>
     </View>
   );
 };
@@ -383,7 +383,7 @@ const StatusIcon = ({ status }) => {
             <>
               <View style={styles.playerInfoRow}>
                   <Text style={styles.nameText}>{item.player.name} ({item.player.alias})</Text>
-                  <StatusIcon status={item.status_info} />
+                  <StatusIcon status={item} />
               </View>
               <Text style={styles.text}>Level: {item.player_level}</Text>
               <Text style={styles.text}>Arrival Time: {new Date(item.player_arrival_time).toLocaleString()}</Text>
