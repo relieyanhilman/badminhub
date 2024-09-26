@@ -336,7 +336,7 @@ const StatusIcon = ({ status }) => {
       iconName = 'radio-button-on';
       break;
     case 'leave':
-      color = 'red'; // abu-abu
+      color = '#AAAAAA'; // abu-abu
       iconName = 'close-circle';
       break;
     default:
