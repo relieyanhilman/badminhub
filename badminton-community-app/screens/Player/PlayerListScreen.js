@@ -333,20 +333,20 @@ const PlayerListScreen = ({ navigation, route }) => {
     );
   };
 
-const StatusIcon = ({ status }) => {
+const StatusIcon = ({ item }) => {
   let color;
   let iconName;
 
-  switch (status) {
-    case 'playing':
+  switch (item.status) {
+    case 1:
       color = '#34C759'; // hijau
       iconName = 'radio-button-on';
       break;
-    case 'idle':
+    case 0:
       color = '#F7DC6F'; // kuning
       iconName = 'radio-button-on';
       break;
-    case 'leave':
+    case 2:
       color = 'red'; // abu-abu
       iconName = 'close-circle';
       break;
@@ -359,7 +359,7 @@ const StatusIcon = ({ status }) => {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
       <Ionicons name={iconName} size={16} color={color} />
-      <Text style={{ marginLeft: 5 }}>{status}</Text>
+      <Text style={{ marginLeft: 5 }}>{item.status_info}</Text>
     </View>
   );
 };
@@ -383,7 +383,7 @@ const StatusIcon = ({ status }) => {
             <>
               <View style={styles.playerInfoRow}>
                   <Text style={styles.nameText}>{item.player.name} ({item.player.alias})</Text>
-                  <StatusIcon status={item.status_info} />
+                  <StatusIcon item={item} />
               </View>
               <Text style={styles.text}>Level: {item.player_level}</Text>
               <Text style={styles.text}>Arrival Time: {new Date(item.player_arrival_time).toLocaleString()}</Text>
