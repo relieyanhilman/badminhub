@@ -1,5 +1,5 @@
 // Match/AddMatchScreen.js
-import React, { useState, useEffect, useContext, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useContext, useMemo, useCallback, useRef } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Alert, ActivityIndicator, ScrollView, FlatList, TouchableOpacity} from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { EventContext } from '../../EventContext';
@@ -40,6 +40,9 @@ const AddMatchScreen = ({ navigation, route }) => {
 
   //Context Match untuk update PlayerListScreen setiap update match
   const {setMatchUpdated} = useContext(MatchContext)
+
+  //State untuk menyimpan status submit apakah telah ditekan
+  const [submitted, setSubmitted] = useState(false);
 
   const [courtId, setCourtId] = useState('');
   const [playerIdA1, setPlayerIdA1] = useState('');
@@ -180,10 +183,14 @@ const AddMatchScreen = ({ navigation, route }) => {
   };
 
   const handleSaveMatch = async () => {
+
+    if(submitted) return;
     if (!courtId || !playerIdA1 || !playerIdA2 || !playerIdB1 || !playerIdB2 || !startTime) {
       Alert.alert('Error', 'Please fill in all required fields.');
       return;
     }
+    setSubmitted(true)
+
     try {
 
       const token = await SecureStore.getItemAsync('userToken');
@@ -220,6 +227,8 @@ const AddMatchScreen = ({ navigation, route }) => {
       }
     } catch (error) {
       Alert.alert('Error', 'An error occurred while adding the match.');
+    }finally{
+      setSubmitted(false)
     }
   };
 
@@ -431,7 +440,7 @@ const AddMatchScreen = ({ navigation, route }) => {
         placeholder="Enter Note (optional)"
       />
 
-      <Button title="Save Match" onPress={handleSaveMatch} />
+      <Button title="Save Match" onPress={handleSaveMatch} disabled={submitted}/>
     </View>
     }
     />

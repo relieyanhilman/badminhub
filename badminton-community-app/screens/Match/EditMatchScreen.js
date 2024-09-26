@@ -41,6 +41,9 @@ const EditMatchScreen = ({ route, navigation }) => {
   //Context Match untuk update PlayerListScreen setiap update match
   const {setMatchUpdated} = useContext(MatchContext)
 
+  //state untuk menyimpan status tekan tombol submit
+  const [submitted, setSubmitted] = useState(false);
+
   const [courtId, setCourtId] = useState(match.court_id.toString());
   const [playerIdA1, setPlayerIdA1] = useState(match.player_id_a1.toString());
   const [playerNameA1, setPlayerNameA1] = useState(match.player_name_a1); // State untuk menyimpan nama pemain A1
@@ -145,7 +148,10 @@ const EditMatchScreen = ({ route, navigation }) => {
       const result = await response.json();
 
       if (result.success) {
-        setAttendees(result.data.attendees);
+        //filter attendees hanya yang memiliki status "idle"
+        setAttendees(result.data.attendees.filter(attendee => attendee.status === 0 ||
+        attendee.player.id === match.player_id_a1 || attendee.player.id === match.player_id_a2 ||
+        attendee.player.id === match.player_id_b1 || attendee.player.id === match.player_id_b2));
       } else {
         setError(result.message || 'Failed to retrieve attendees data');
       }
@@ -187,10 +193,12 @@ const EditMatchScreen = ({ route, navigation }) => {
   };
 
   const handleSaveMatch = async () => {
+    if (submitted) return;
     if (!courtId || !playerIdA1 || !playerIdA2 || !playerIdB1 || !playerIdB2 || !startTime || !endTime) {
       Alert.alert('Error', 'Please fill in all required fields.');
       return;
     }
+    setSubmitted(true)
 
     if (endTime && formattedEndTime < formattedStartTime) {
       Alert.alert('Error', 'End time cannot be earlier than start time.');
@@ -236,6 +244,8 @@ const EditMatchScreen = ({ route, navigation }) => {
     } catch (error) {
       console.log(error)
       Alert.alert('Error', 'An error occurred while updating the match.');
+    }finally{
+      setSubmitted(false)
     }
   };
 
@@ -483,7 +493,7 @@ const EditMatchScreen = ({ route, navigation }) => {
           placeholder="Enter Note (optional)"
         />
 
-        <Button title="Update Match" onPress={handleSaveMatch} />
+        <Button title="Update Match" onPress={handleSaveMatch} disabled={submitted} />
       </View>
     }
     />
