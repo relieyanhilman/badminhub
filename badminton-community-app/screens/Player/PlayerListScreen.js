@@ -35,6 +35,9 @@ const PlayerListScreen = ({ navigation, route }) => {
   // State untuk fitur edit to paid
   const [processingPlayerId, setProcessingPlayerId] = useState(null);
 
+  // State untuk mark as leave
+  const [markAsLeavePlayerId, setMarkAsLeavePlayerId] = useState(null);
+
   //untuk men-trigger refresh di EventPlayerScreen
   const { triggerRefresh } = useContext(EventContext);
 
@@ -66,7 +69,7 @@ const PlayerListScreen = ({ navigation, route }) => {
       }
     }, [matchUpdated]);
 
-  const fetchPlayers = async (isRefreshing = false) => {
+  const fetchPlayers = async (isRefreshing = false) => {7
     if (!isRefreshing) {
         setLoading(true)
     }
@@ -333,36 +336,85 @@ const PlayerListScreen = ({ navigation, route }) => {
     );
   };
 
-const StatusIcon = ({ item }) => {
-  let color;
-  let iconName;
+  const StatusIcon = ({ item }) => {
+      let color;
+      let iconName;
 
-  switch (item.status) {
-    case 1:
-      color = '#34C759'; // hijau
-      iconName = 'radio-button-on';
-      break;
-    case 0:
-      color = '#F7DC6F'; // kuning
-      iconName = 'radio-button-on';
-      break;
-    case 2:
-      color = 'red'; // abu-abu
-      iconName = 'close-circle';
-      break;
-    default:
-      color = '#AAAAAA'; // abu-abu
-      iconName = 'help-circle';
-      break;
+      switch (item.status) {
+        case 1:
+          color = '#34C759'; // hijau
+          iconName = 'radio-button-on';
+          break;
+        case 0:
+          color = '#F7DC6F'; // kuning
+          iconName = 'radio-button-on';
+          break;
+        case 2:
+          color = 'red'; // abu-abu
+          iconName = 'close-circle';
+          break;
+        default:
+          color = '#AAAAAA'; // abu-abu
+          iconName = 'help-circle';
+          break;
+      }
+
+      return (
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Ionicons name={iconName} size={16} color={color} />
+          <Text style={{ marginLeft: 5 }}>{item.status_info}</Text>
+        </View>
+      );
+    };
+
+  const handleLeavePlayer = async (playerT) => {
+    Alert.alert(
+        "Mark as Leave Confirmation",
+        `Are you sure you want to Mark as Leave player ${playerT.player.name} (${playerT.player.alias}) ?`,
+        [
+          {
+            text: "Cancel",
+            style: "cancel",
+          },
+          {
+            text: "Yes",
+            onPress: async () => {
+                setMarkAsLeavePlayerId(playerT.id);
+                try {
+                  const token = await SecureStore.getItemAsync('userToken');
+                  if (!token) throw new Error('User token not found');
+
+                  const response = await fetch(`https://apiv2.pbbedahulu.my.id/mabar/day/detail/leave`, {
+                    method: 'POST',
+                    headers: {
+                      'Authorization': token,
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ id: playerT.id }),
+                  });
+
+                  if (response.ok) {
+                    Alert.alert('Success', `Status player ${playerT.player.name} (${playerT.player.alias}) marked as leave successfully.`, [{ text: 'OK'}]);
+                    setPlayers((prevPlayers) =>
+                      prevPlayers.map((player) =>
+                        player.id === playerT.id ? { ...player, status: 2, status_info: 'leave' } : player
+                      )
+                    );
+                  } else {
+                    const data = await response.json();
+                    Alert.alert('Error', data.message || 'Failed to change payment status');
+                  }
+                } catch (error) {
+                  console.log(error);
+                  Alert.alert('Error', 'An error occurred while changing payment status');
+                } finally {
+                  setMarkAsLeavePlayerId(null);
+                }
+            }
+          }
+        ]
+    )
   }
-
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-      <Ionicons name={iconName} size={16} color={color} />
-      <Text style={{ marginLeft: 5 }}>{item.status_info}</Text>
-    </View>
-  );
-};
 
   const renderItem = ({ item }) => {
    const isMasterPlayer = item.isMasterPlayer;
@@ -417,15 +469,25 @@ const StatusIcon = ({ item }) => {
           </TouchableOpacity>
           {isMasterPlayer ? (
             <Button title="Apply Player" onPress={() => handleApplyPlayer(item)} disabled={isApplying}/>
-          ) : (
-            <>
+          ) :
+          (
+            <View style={[styles.markButtonContainer, {flexDirection: 'row', alignItems: 'center'}]}>
               <Button
                 title={isProcessing ? "Processing..." : "Mark as Paid"}
                 onPress={() => handlePaymentStatusChange(item)}
                 disabled={item.payment_status === "paid" || isProcessing}
                 color={item.payment_status === "paid" ? "green" : "orange"}
+
               />
-            </>
+          {item.status_info !== "leave" && (
+            <Button
+              title={isProcessing ? "Processing..." : "Mark as Leave"}
+              onPress={() => handleLeavePlayer(item)}
+              disabled={item.status_info === "leave" || isProcessing}
+              color={item.status_info === "leave" ? "grey" : "red"}
+            />
+          )}
+            </View>
           )}
         </View>
       </View>
@@ -668,6 +730,7 @@ const styles = StyleSheet.create({
   buttonText: {
     color: '#fff',
     fontWeight: 'bold',
+    textAlign: 'center',
   },
   expandButton: {
     backgroundColor: '#d3d3d3',

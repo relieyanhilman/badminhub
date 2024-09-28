@@ -46,13 +46,15 @@ const EventPlayerScreen = ({ route, navigation }) => {
     }, [route.params?.refresh])
   );
 
-  useEffect(() => {
-    if (shouldRefresh) {
-      fetchEventPlayers();
-      resetRefresh(); // Reset state setelah refresh dilakukan
-    }
-  }, [shouldRefresh]);
-
+  useFocusEffect(
+    useCallback(() => {
+      if (shouldRefresh) {
+        console.log("apakah masuk ke sini?")
+        fetchEventPlayers();
+        resetRefresh(); // Reset state setelah refresh dilakukan
+      }
+    }, [shouldRefresh])
+  );
 
   const fetchEventPlayers = async () => {
     setLoading(true);  // Set loading to true when fetching data
