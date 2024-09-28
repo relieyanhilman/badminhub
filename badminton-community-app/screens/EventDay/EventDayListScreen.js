@@ -18,6 +18,7 @@ const EventDayListScreen = ({ navigation, route }) => {
   const [loadingItems, setLoadingItems] = useState({}); // State untuk melacak loading generate recap per item
 
   useEffect(() => {
+    console.log("apakah masuk ke sini terus?")
     fetchEventDays();
   }, []);
 
@@ -179,8 +180,52 @@ const EventDayListScreen = ({ navigation, route }) => {
     navigation.navigate('EditEventDay', { eventId, day });
   };
 
+  //fungsi untuk mengubah status_info player pada mabar day menjadi "leave"
+  const handleEndSession = async (day) => {
+    Alert.alert(
+        "End Session Confirmation",
+        `Are you sure you want to end session ${day.date}?`,
+        [
+          {
+            text: "Cancel",
+            style: "cancel",
+          },
+          {
+            text: "Yes",
+            onPress: async () => {
+                try {
+                  const token = await SecureStore.getItemAsync('userToken');
+                  if (!token) throw new Error('User token not found');
+
+                  const response = await fetch(`https://apiv2.pbbedahulu.my.id/mabar/day/detail/leave/all`, {
+                    method: 'POST',
+                    headers: {
+                      'Authorization': token,
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ open_mabar_day_id: day.id }),
+                  });
+
+                  if (response.ok) {
+                    Alert.alert('Success', `Session ${day.date} ended successfully.`, [{ text: 'OK'}]);
+
+                  } else {
+                    const data = await response.json();
+                    Alert.alert('Error', data.message || 'Failed to end session');
+                  }
+                } catch (error) {
+                  console.log(error);
+                  Alert.alert('Error', 'An error occurred while ending the session');
+                }
+            }
+          }
+        ]
+    )
+  }
+
   const renderItem = ({ item }) => {
-    const isRecapGenerated = !!recaps[item.id];
+    const isRecapGenerated = !!recaps
+    [item.id];
     const isExpanded = expandedItems[item.id];
     const isLoading = loadingItems[item.id]; // Periksa apakah item sedang loading
 
@@ -208,10 +253,14 @@ const EventDayListScreen = ({ navigation, route }) => {
 
 
              </TouchableOpacity>
-
-             <TouchableOpacity style={[styles.button, styles.editButton]} onPress={() => handleEditPress(item)}>
-                <Text style={[styles.text, {color: 'white'}]}>Edit</Text>
-             </TouchableOpacity>
+            <View>
+                 <TouchableOpacity style={styles.button} onPress={() => handleEditPress(item)}>
+                    <Text style={[styles.text, {color: 'white'}]}>Edit</Text>
+                 </TouchableOpacity>
+                 <TouchableOpacity style={[styles.button, {backgroundColor: "red"}]} onPress={() => handleEndSession(item)}>
+                    <Text style={[styles.text, {color: 'white'}]}>End Session</Text>
+                 </TouchableOpacity>
+             </View>
          </View>
 
        <TouchableOpacity style={styles.recapIconTouchable} onPress={() => handleToggleExpand(item.id, isRecapGenerated)}>
@@ -372,9 +421,9 @@ const styles = StyleSheet.create({
   },
   button: {
     backgroundColor: '#555555',
-    padding: 10,
+    padding: 8,
     marginVertical: 4,
-    borderRadius: 4,
+    borderRadius: 2,
     alignItems: 'center',
   },
   regenerateButton: {
