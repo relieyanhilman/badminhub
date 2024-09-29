@@ -18,7 +18,6 @@ const EventDayListScreen = ({ navigation, route }) => {
   const [loadingItems, setLoadingItems] = useState({}); // State untuk melacak loading generate recap per item
 
   useEffect(() => {
-    console.log("apakah masuk ke sini terus?")
     fetchEventDays();
   }, []);
 

@@ -117,12 +117,6 @@ const EventPlayerScreen = ({ route, navigation }) => {
       if (membershipStart > membershipEnd){
         throw new Error("membership start date must be before membership end date");
       }
-      if (nominal == '' || maxParticipation == ''){
-        throw new Error("All fields must be filled in");
-      }
-      if (nominal < 0 || maxParticipation < 0){
-        throw new Error("Nominal and max participation must be a positive number");
-      }
       const token = await SecureStore.getItemAsync('userToken');
       let api;
       if (modeSubResub == "sub"){
