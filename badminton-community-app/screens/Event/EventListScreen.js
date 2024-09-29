@@ -92,8 +92,8 @@ const EventListScreen = ({ navigation, route }) => {
     fetchEvents();
   }, []);
 
-  const handleEventPress = (eventId, eventName, eventHallId) => {
-    updateEvent(eventId, eventName, eventHallId)
+  const handleEventPress = (eventId, eventName, eventHallId, eventHtmMember) => {
+    updateEvent(eventId, eventName, eventHallId, eventHtmMember)
     navigation.navigate('EventDay');
   };
 
@@ -168,7 +168,7 @@ const EventListScreen = ({ navigation, route }) => {
   };
 
   const renderItem = ({ item }) => (
-    <TouchableOpacity onPress={() => handleEventPress(item.id, item.name, item.hall_id)}>
+    <TouchableOpacity onPress={() => handleEventPress(item.id, item.name, item.hall_id, item.htm_member)}>
       <View style={styles.card}>
         <View style={styles.cardHeader}>
           <Text style={styles.eventName} numberOfLines={2} ellipsizeMode="tail" minimumFontScale={0.8}>{item.name}</Text>
