@@ -1,6 +1,7 @@
 // Match/MatchListScreen.js
-import React, {useState, useEffect, useCallback} from 'react';
+import React, {useState, useEffect, useCallback, useContext} from 'react';
 import { useFocusEffect } from '@react-navigation/native';
+import {MatchContext} from '../../EventContext';
 import { View, Text, FlatList, Button, StyleSheet, Alert, ActivityIndicator, TextInput } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 
@@ -18,6 +19,12 @@ const MatchListScreen = ({ navigation, route }) => {
   //state untuk mendukung search function
   const [searchQuery, setSearchQuery] = useState('')
   const [filteredMatches, setFilteredMatches] = useState([])
+
+  //state untuk mengelola usability button end match
+  const [processingMatchId, setProcessingMatchId] = useState(null);
+
+  //Context Match untuk update PlayerListScreen setiap end match
+  const {setMatchUpdated} = useContext(MatchContext)
 
   useEffect(() => {
     fetchMatches()
@@ -173,60 +180,121 @@ const MatchListScreen = ({ navigation, route }) => {
     setMatches((prevMatches) => [...prevMatches, newMatch]);
   };
 
+  const handleEndMatch = async (item) => {
 
-  const renderItem = ({ item }) => (
-    <View style={styles.item}>
-      <Text style={styles.headerText}>{item.court_name}</Text>
-      <View style={styles.matchContainer}>
-            <View style={styles.teamContainer}>
-              <View style={styles.playerContainer}>
-                <Text style={styles.playerText}>{item.player_name_a1}</Text>
-                <Text style={styles.playerLevel}>Level: {item.player_level_a1}</Text>
-              </View>
-              <View style={styles.playerContainer}>
-                <Text style={styles.playerText}>{item.player_name_a2}</Text>
-                <Text style={styles.playerLevel}>Level: {item.player_level_a2}</Text>
-              </View>
+    if (processingMatchId === item.id) {
+        return;
+    }
+    Alert.alert(
+        "End Match Confirmation",
+        `Are you sure you want to end this match ?`,
+        [
+          {
+            text: "Cancel",
+            style: "cancel",
+          },
+          {
+            text: "Yes",
+            onPress: async () => {
+                setProcessingMatchId(item.id);
+                try {
+                  const token = await SecureStore.getItemAsync('userToken');
+                  if (!token) throw new Error('User token not found');
+
+                  const response = await fetch(`https://apiv2.pbbedahulu.my.id/mabar/match/end/${item.id}`, {
+                    method: 'GET',
+                    headers: {
+                      'Authorization': token,
+                      'Content-Type': 'application/json',
+                    },
+                  });
+
+                  if (response.ok) {
+                    setMatchUpdated(true);
+                    Alert.alert('Success', `This match ended successfully.`, [{ text: 'OK'}]);
+                    fetchMatches();
+                  } else {
+                    const data = await response.json();
+                    Alert.alert('Error', data.message || 'Failed to end match');
+                  }
+                } catch (error) {
+                  console.log(error);
+                  Alert.alert('Error', 'An error occurred while ending the match');
+                } finally{
+                  setProcessingMatchId(null);
+                }
+            }
+          }
+        ]
+    )
+  }
+
+  const renderItem = ({ item }) => {
+    const isProcessing = processingMatchId === item.id;
+
+    return (
+        <View style={styles.item}>
+          <Text style={styles.headerText}>{item.court_name}</Text>
+          <View style={styles.matchContainer}>
+                <View style={styles.teamContainer}>
+                  <View style={styles.playerContainer}>
+                    <Text style={styles.playerText}>{item.player_name_a1}</Text>
+                    <Text style={styles.playerLevel}>Level: {item.player_level_a1}</Text>
+                  </View>
+                  <View style={styles.playerContainer}>
+                    <Text style={styles.playerText}>{item.player_name_a2}</Text>
+                    <Text style={styles.playerLevel}>Level: {item.player_level_a2}</Text>
+                  </View>
+                </View>
+
+                  <Text style={styles.vsText}>VS</Text>
+
+                <View style={styles.teamContainer}>
+                  <View style={styles.playerContainer}>
+                    <Text style={styles.playerText}>{item.player_name_b1}</Text>
+                    <Text style={styles.playerLevel}>Level: {item.player_level_b1}</Text>
+                  </View>
+                  <View style={styles.playerContainer}>
+                    <Text style={styles.playerText}>{item.player_name_b2}</Text>
+                    <Text style={styles.playerLevel}>Level: {item.player_level_b2}</Text>
+                  </View>
+                </View>
+          </View>
+
+          {item.score == null || item.score == "" ? null : (      <View style={styles.vsContainer}>
+                                                 <Text style={[styles.scoreText, {fontWeight: 'bold'}]}>Final Score</Text>
+                                                 <Text style={styles.scoreText}>{item.score || 'N/A'}</Text>
+                                             </View>)}
+
+
+          <View style={styles.matchDetailInfoContainer}>
+            <View style={styles.timeInfo}>
+              {item.start_time !== "" ? <Text style={styles.timeText}>Start Time: {item.start_time}</Text> : null}
+              <Text style={styles.text}>End Time: {item.end_time !== null ? item.end_time : "Not Set" }</Text>
             </View>
 
-              <Text style={styles.vsText}>VS</Text>
-
-            <View style={styles.teamContainer}>
-              <View style={styles.playerContainer}>
-                <Text style={styles.playerText}>{item.player_name_b1}</Text>
-                <Text style={styles.playerLevel}>Level: {item.player_level_b1}</Text>
-              </View>
-              <View style={styles.playerContainer}>
-                <Text style={styles.playerText}>{item.player_name_b2}</Text>
-                <Text style={styles.playerLevel}>Level: {item.player_level_b2}</Text>
-              </View>
+            <View style={styles.additionalInfo}>
+              {item.duration == "0 minutes" ? null : <Text style={styles.text}>Duration: {item.duration}</Text>}
+              <Text style={styles.text}>Shuttlecocks Used: {item.shuttlecock_used || item.shuttlecock_used === 0? item.shuttlecock_used : "Not Set"}</Text>
+              {item.note ? <Text style={styles.text}>Note: {item.note}</Text> : null}
             </View>
-      </View>
+          </View>
 
-      {item.score == null || item.score == "" ? null : (      <View style={styles.vsContainer}>
-                                             <Text style={[styles.scoreText, {fontWeight: 'bold'}]}>Final Score</Text>
-                                             <Text style={styles.scoreText}>{item.score || 'N/A'}</Text>
-                                         </View>)}
-
-
-      <View style={styles.matchDetailInfoContainer}>
-        <View style={styles.timeInfo}>
-          {item.start_time !== "" ? <Text style={styles.timeText}>Start Time: {item.start_time}</Text> : null}
-          <Text style={styles.text}>End Time: {item.end_time !== null ? item.end_time : "Not Set" }</Text>
+         <View style={styles.buttonContainer}>
+          <View style={styles.itemButtons}>
+            <Button title="Edit" onPress={() => handleEditMatch(item)} />
+          </View>
+          <View style={styles.itemButtons}>
+            <Button
+                title={isProcessing ? "Processing..." : "End Match"}
+                onPress={() => handleEndMatch(item)}
+                disabled={item.end_time !== null  || isProcessing}
+                color={item.end_time !== null ? "grey" : "red"}
+            />
+          </View>
+          </View>
         </View>
-
-        <View style={styles.additionalInfo}>
-          {item.duration == "0 minutes" ? null : <Text style={styles.text}>Duration: {item.duration}</Text>}
-          <Text style={styles.text}>Shuttlecocks Used: {item.shuttlecock_used || item.shuttlecock_used === 0? item.shuttlecock_used : "Not Set"}</Text>
-          {item.note ? <Text style={styles.text}>Note: {item.note}</Text> : null}
-        </View>
-      </View>
-
-      <View style={styles.itemButtons}>
-        <Button title="Edit" onPress={() => handleEditMatch(item)} />
-      </View>
-    </View>
-  );
+  )};
 
    const onRefresh = () => {
      setRefreshing(true);
@@ -401,6 +469,11 @@ const styles = StyleSheet.create({
     color: 'red',
     fontSize: 16,
   },
+  buttonContainer:{
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  }
 });
 
 export default MatchListScreen;

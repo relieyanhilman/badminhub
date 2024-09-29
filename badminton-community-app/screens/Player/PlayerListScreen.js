@@ -477,7 +477,6 @@ const PlayerListScreen = ({ navigation, route }) => {
                 onPress={() => handlePaymentStatusChange(item)}
                 disabled={item.payment_status === "paid" || isProcessing}
                 color={item.payment_status === "paid" ? "green" : "orange"}
-
               />
           {item.status_info !== "leave" && (
             <Button

@@ -62,12 +62,10 @@ const EditMatchScreen = ({ route, navigation }) => {
   const [playerLevelB2, setPlayerLevelB2] = useState(match.player_level_b2);
 
   const [startTime, setStartTime] = useState(new Date(`2024-01-01T${match.start_time}`));
-  const [endTime, setEndTime] = useState(match.end_time ?  new Date(`2024-01-01T${match.end_time}`) : new Date());
   const [score, setScore] = useState(match.score || '');
   const [shuttlecockUsed, setShuttlecockUsed] = useState(match.shuttlecock_used?.toString() || 0);
   const [note, setNote] = useState(match.note || '');
   const [showStartTimePicker, setShowStartTimePicker] = useState(false);
-  const [showEndTimePicker, setShowEndTimePicker] = useState(false);
 
   // State for search query
   const [searchQueryA1, setSearchQueryA1] = useState('');
@@ -194,16 +192,11 @@ const EditMatchScreen = ({ route, navigation }) => {
 
   const handleSaveMatch = async () => {
     if (submitted) return;
-    if (!courtId || !playerIdA1 || !playerIdA2 || !playerIdB1 || !playerIdB2 || !startTime || !endTime) {
+    if (!courtId || !playerIdA1 || !playerIdA2 || !playerIdB1 || !playerIdB2 || !startTime) {
       Alert.alert('Error', 'Please fill in all required fields.');
       return;
     }
     setSubmitted(true)
-
-    if (endTime && formattedEndTime < formattedStartTime) {
-      Alert.alert('Error', 'End time cannot be earlier than start time.');
-      return;
-    }
 
     try {
       const token = await SecureStore.getItemAsync('userToken');
@@ -226,7 +219,6 @@ const EditMatchScreen = ({ route, navigation }) => {
           player_id_b2: parseInt(playerIdB2),
           player_level_b2: playerLevelB2,
           start_time: formattedStartTime,
-          end_time: formattedEndTime,
           score: score,
           shuttlecock_used: parseInt(shuttlecockUsed) || 0,
           note: note ,
@@ -256,24 +248,11 @@ const EditMatchScreen = ({ route, navigation }) => {
     }
   };
 
-  const onChangeEndTime = (event, selectedTime) => {
-    setShowEndTimePicker(false);
-    if (selectedTime) {
-      setEndTime(selectedTime);
-    }
-  };
-
   const formattedStartTime = useMemo(() => {
     return `${startTime.getHours().toString().padStart(2, '0')}:${startTime.getMinutes()
       .toString()
       .padStart(2, '0')}:${startTime.getSeconds().toString().padStart(2, '0')}`;
   }, [startTime]);
-
-  const formattedEndTime = useMemo(() => {
-    return endTime instanceof Date
-          ? `${endTime.getHours().toString().padStart(2, '0')}:${endTime.getMinutes().toString().padStart(2, '0')}:${endTime.getSeconds().toString().padStart(2, '0')}`
-          : new Date();
-  },[endTime]);
 
   const handleSelectPlayer = useCallback(
     (playerId, setPlayerId, setPlayerName, setPlayerLevel, setSearchQuery, setShowSearch, setShowAllPlayers) => {
@@ -450,21 +429,6 @@ const EditMatchScreen = ({ route, navigation }) => {
             mode="time"
             display="default"
             onChange={onChangeStartTime}
-          />
-        )}
-
-        <Text style={styles.label}>End Time {formattedEndTime !== null ? <Text style={styles.timeText}>: {formattedEndTime}</Text> : null}</Text>
-        <View>
-            <TouchableOpacity style={styles.button} onPress={() => setShowEndTimePicker(true)}>
-              <Text style={styles.buttonText}>Select End Time</Text>
-            </TouchableOpacity>
-        </View>
-        {showEndTimePicker && (
-          <DateTimePicker
-            value={endTime}
-            mode="time"
-            display="default"
-            onChange={onChangeEndTime}
           />
         )}
 
