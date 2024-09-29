@@ -9,6 +9,8 @@ export const EventProvider = ({ children }) => {
   const [eventId, setEventId] = useState('');
   const [eventHallId, setEventHallId] = useState('');
   const [eventHtmMember, setEventHtmMember] = useState('');
+  const [eventHtmNonMember, setEventHtmNonMember] = useState('');
+
   const [shouldRefresh, setShouldRefresh] = useState(false);
 
   const triggerRefresh = useCallback(() => {
@@ -26,6 +28,7 @@ export const EventProvider = ({ children }) => {
         const savedEventId = await AsyncStorage.getItem('eventId');
         const savedEventHallId = await AsyncStorage.getItem('eventHallId');
         const savedEventHtmMember = await AsyncStorage.getItem('eventHtmMember');
+        const savedEventHtmNonMember = await AsyncStorage.getItem('eventHtmNonMember');
 
         if (savedEventName) {
           setEventName(savedEventName);
@@ -39,6 +42,9 @@ export const EventProvider = ({ children }) => {
         if (savedEventHtmMember) {
           setEventHtmMember(parseFloat(savedEventHtmMember));
         }
+        if (savedEventHtmNonMember) {
+          setEventHtmNonMember(parseFloat(savedEventHtmNonMember));
+        }
 
       } catch (error) {
         console.log('Failed to load event:', error);
@@ -48,23 +54,25 @@ export const EventProvider = ({ children }) => {
     loadEvent();
   }, []);
 
-  const updateEvent = async (id, name, hallId, htmMember) => {
+  const updateEvent = async (id, name, hallId, htmMember, htmNonMember) => {
     try {
       setEventId(id)
       setEventName(name);
       setEventHallId(hallId)
       setEventHtmMember(htmMember)
+      setEventHtmNonMember(htmNonMember)
       await AsyncStorage.setItem('eventId', id.toString());
       await AsyncStorage.setItem('eventName', name);
       await AsyncStorage.setItem('eventHallId', hallId.toString());
       await AsyncStorage.setItem('eventHtmMember', htmMember.toString());
+      await AsyncStorage.setItem('eventHtmNonMember', htmNonMember.toString());
     } catch (error) {
       console.log('Failed to save event information:', error);
     }
   };
 
   return (
-    <EventContext.Provider value={{ eventId, eventName, eventHallId, eventHtmMember,updateEvent, shouldRefresh, triggerRefresh, resetRefresh }}>
+    <EventContext.Provider value={{ eventId, eventName, eventHallId, eventHtmMember, eventHtmNonMember, updateEvent, shouldRefresh, triggerRefresh, resetRefresh }}>
       {children}
     </EventContext.Provider>
   );
