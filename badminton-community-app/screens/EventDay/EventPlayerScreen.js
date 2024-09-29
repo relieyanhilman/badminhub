@@ -123,6 +123,7 @@ const EventPlayerScreen = ({ route, navigation }) => {
       if (nominal < 0 || maxParticipation < 0){
         throw new Error("Nominal and max participation must be a positive number");
       }
+      setIsProcessing(true)
       const token = await SecureStore.getItemAsync('userToken');
       let api;
       if (modeSubResub == "sub"){
@@ -152,18 +153,18 @@ const EventPlayerScreen = ({ route, navigation }) => {
       if (result.success) {
         const message = modeSubResub == 'sub' ? 'Player subscribed successfully.' : 'Player resubscribed successfully.'
         setIsModalVisible({visible: false, modeSubResub: null})
-        Alert.alert('Success', message, [{ text: 'OK', onPress: () => fetchEventPlayers() }]);
+        Alert.alert('Success', message, [{ text: 'OK'}]);
       } else {
         const errorMessage = modeSubResub == 'sub'? 'Failed to subscribe player.' : 'Failed to resubscribe player.'
         setIsModalVisible({visible: false, modeSubResub: null})
-        Alert.alert('Error', result.message || errorMessage, [{ text: 'OK', onPress: () => setIsModalVisible({visible: false, modeSubResub: null}) }]);
+        Alert.alert('Error', result.message || errorMessage, [{ text: 'OK'}]);
       }
     } catch (err) {
       console.log(err)
       const catchErrorMessage = modeSubResub == 'sub'? 'An error occurred while subscribing player.' : 'An error occurred while resubscribing player.'
       Alert.alert('Error', err.message || catchErrorMessage, [{ text: 'OK', onPress: () => setIsModalVisible({visible: false, modeSubResub: null}) }]);
     } finally{
-      setIsProcessing(null);
+      setIsProcessing(false);
       setPlayerSubResubModal(null)
       setModalAttToDefault()
     }
