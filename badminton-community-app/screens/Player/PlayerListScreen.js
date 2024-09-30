@@ -1,11 +1,13 @@
 //Player/PlayerListScreen
 import React, { useState, useEffect, useCallback, useContext } from 'react';
-import { View, Text, FlatList, Button, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, Modal, TextInput } from 'react-native';
+import { View, Text, FlatList, Button, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, Modal, TextInput} from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Picker } from '@react-native-picker/picker';
+import {Ionicons} from '@expo/vector-icons';
 import * as SecureStore from 'expo-secure-store';
 
 import { EventContext } from '../../EventContext';
+import {MatchContext} from '../../EventContext';
 
 const PlayerListScreen = ({ navigation, route }) => {
   const { dayId } = route.params;
@@ -30,11 +32,21 @@ const PlayerListScreen = ({ navigation, route }) => {
   // State untuk pencarian
   const [searchQuery, setSearchQuery] = useState('');
 
-  // State untuk fitur edit to paid
-  const [processingPlayerId, setProcessingPlayerId] = useState(null);
+  // State untuk mark as leave
+  const [markAsLeavePlayerId, setMarkAsLeavePlayerId] = useState(null);
 
   //untuk men-trigger refresh di EventPlayerScreen
-  const { triggerRefresh } = useContext(EventContext);
+  // khusus eventHtmNonMember adalah untuk mengelola visibilitas modal setelah menekan tombol mark as paid
+  const { triggerRefresh, eventHtmNonMember } = useContext(EventContext);
+
+  //untuk menerima trigger refresh dari addMatchScreen atau editMatchScreen
+  const {matchUpdated, setMatchUpdated} = useContext(MatchContext);
+
+  //state untuk mengelola visibilitas modal setelah menekan tombol mark as paid
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [nominal, setNominal] = useState(eventHtmNonMember);
+  const [playerPaidModal, setPlayerPaidModal] = useState(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     fetchPlayers();
@@ -54,7 +66,14 @@ const PlayerListScreen = ({ navigation, route }) => {
      applyFiltersAndSearch();
   }, [searchQuery, players, masterPlayers]);
 
-  const fetchPlayers = async (isRefreshing = false) => {
+  useEffect(() => {
+      if (matchUpdated) {
+        fetchPlayers();
+        setMatchUpdated(false);
+      }
+    }, [matchUpdated]);
+
+  const fetchPlayers = async (isRefreshing = false) => {7
     if (!isRefreshing) {
         setLoading(true)
     }
@@ -262,54 +281,53 @@ const PlayerListScreen = ({ navigation, route }) => {
     setFilteredPlayers(finalResult);
   };
 
-  const handlePaymentStatusChange = async (playerT) => {
+  const handlePaymentStatusChange = async (item) => {
+     if (isProcessing) return;
+     setPlayerPaidModal(item);
+     setIsModalVisible(true);
+  }
 
-    Alert.alert(
-        "Mark as Paid Confirmation",
-        `Are you sure you want to Mark as paid player ${playerT.player.name} (${playerT.player.alias}) ?`,
-        [
-          {
-            text: "Cancel",
-            style: "cancel",
-          },
-          {
-            text: "Yes",
-            onPress: async () => {
-                setProcessingPlayerId(playerT.id);
-                try {
-                  const token = await SecureStore.getItemAsync('userToken');
-                  if (!token) throw new Error('User token not found');
+  const handleModalCancel = () => {
+    setIsModalVisible(false)
+  }
+  const handleModalPaymentStatusChange = async () => {
+    try {
+      setIsProcessing(true);
+      const token = await SecureStore.getItemAsync('userToken');
+      if (!token) throw new Error('User token not found');
 
-                  const response = await fetch(`https://apiv2.pbbedahulu.my.id/cashflow/paid`, {
-                    method: 'POST',
-                    headers: {
-                      'Authorization': token,
-                      'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ id: playerT.id }),
-                  });
+      const response = await fetch(`https://apiv2.pbbedahulu.my.id/cashflow/paid`, {
+        method: 'POST',
+        headers: {
+          'Authorization': token,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id: playerPaidModal.id, nominal: parseFloat(nominal) }),
+      });
 
-                  if (response.ok) {
-                    Alert.alert('Success', `Paid payment status player ${playerT.player.name} (${playerT.player.alias}) marked successfully.`, [{ text: 'OK'}]);
-                    setPlayers((prevPlayers) =>
-                      prevPlayers.map((player) =>
-                        player.id === playerT.id ? { ...player, payment_status: 'paid' } : player
-                      )
-                    );
-                  } else {
-                    const data = await response.json();
-                    Alert.alert('Error', data.message || 'Failed to change payment status');
-                  }
-                } catch (error) {
-                  console.log(error);
-                  Alert.alert('Error', 'An error occurred while changing payment status');
-                } finally {
-                  setProcessingPlayerId(null);
-                }
-            }
-          }
-        ]
-    )
+      if (response.ok) {
+        setIsModalVisible(false);
+        setIsProcessing(false);
+        Alert.alert('Success', `Paid payment status player ${ playerPaidModal.player.name} (${playerPaidModal.player.alias}) marked successfully.`, [{ text: 'OK'}]);
+        setPlayers((prevPlayers) =>
+          prevPlayers.map((player) =>
+            player.id === playerPaidModal.id ? { ...player, payment_status: 'paid' } : player
+          )
+        );
+      } else {
+        const data = await response.json();
+        setIsModalVisible(false);
+        setIsProcessing(false);
+        Alert.alert('Error', data.message || 'Failed to change payment status');
+      }
+    } catch (error) {
+      console.log(error);
+      setIsProcessing(false);
+      Alert.alert('Error', 'An error occurred while changing payment status');
+    } finally {
+      setPlayerPaidModal(null);
+      setNominal(eventHtmNonMember)
+    }
 
   }
 
@@ -321,11 +339,90 @@ const PlayerListScreen = ({ navigation, route }) => {
     );
   };
 
+  const StatusIcon = ({ item }) => {
+      let color;
+      let iconName;
+
+      switch (item.status) {
+        case 1:
+          color = '#34C759'; // hijau
+          iconName = 'radio-button-on';
+          break;
+        case 0:
+          color = '#F7DC6F'; // kuning
+          iconName = 'radio-button-on';
+          break;
+        case 2:
+          color = 'red'; // abu-abu
+          iconName = 'close-circle';
+          break;
+        default:
+          color = '#AAAAAA'; // abu-abu
+          iconName = 'help-circle';
+          break;
+      }
+
+      return (
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Ionicons name={iconName} size={16} color={color} />
+          <Text style={{ marginLeft: 5 }}>{item.status_info}</Text>
+        </View>
+      );
+    };
+
+  const handleLeavePlayer = async (playerT) => {
+    Alert.alert(
+        "Mark as Leave Confirmation",
+        `Are you sure you want to Mark as Leave player ${playerT.player.name} (${playerT.player.alias}) ?`,
+        [
+          {
+            text: "Cancel",
+            style: "cancel",
+          },
+          {
+            text: "Yes",
+            onPress: async () => {
+                setMarkAsLeavePlayerId(playerT.id);
+                try {
+                  const token = await SecureStore.getItemAsync('userToken');
+                  if (!token) throw new Error('User token not found');
+
+                  const response = await fetch(`https://apiv2.pbbedahulu.my.id/mabar/day/detail/leave`, {
+                    method: 'POST',
+                    headers: {
+                      'Authorization': token,
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ id: playerT.id }),
+                  });
+
+                  if (response.ok) {
+                    Alert.alert('Success', `Status player ${playerT.player.name} (${playerT.player.alias}) marked as leave successfully.`, [{ text: 'OK'}]);
+                    setPlayers((prevPlayers) =>
+                      prevPlayers.map((player) =>
+                        player.id === playerT.id ? { ...player, status: 2, status_info: 'leave' } : player
+                      )
+                    );
+                  } else {
+                    const data = await response.json();
+                    Alert.alert('Error', data.message || 'Failed to change payment status');
+                  }
+                } catch (error) {
+                  console.log(error);
+                  Alert.alert('Error', 'An error occurred while changing payment status');
+                } finally {
+                  setMarkAsLeavePlayerId(null);
+                }
+            }
+          }
+        ]
+    )
+  }
+
   const renderItem = ({ item }) => {
    const isMasterPlayer = item.isMasterPlayer;
    const isExpanded = expandedPlayerIds.includes(item.id);
    const isApplying = applyingPlayerIds.includes(item.id);
-   const isProcessing = processingPlayerId === item.id;
 
    return (
       <View style={isMasterPlayer ? styles.masterItem : styles.item}>
@@ -338,7 +435,10 @@ const PlayerListScreen = ({ navigation, route }) => {
             </>
         ) : (
             <>
-              <Text style={styles.nameText}>{item.player.name} ({item.player.alias})</Text>
+              <View style={styles.playerInfoRow}>
+                  <Text style={styles.nameText}>{item.player.name} ({item.player.alias})</Text>
+                  <StatusIcon item={item} />
+              </View>
               <Text style={styles.text}>Level: {item.player_level}</Text>
               <Text style={styles.text}>Arrival Time: {new Date(item.player_arrival_time).toLocaleString()}</Text>
               <Text style={styles.text}>Matches Played: {item.match_played}</Text>
@@ -371,15 +471,24 @@ const PlayerListScreen = ({ navigation, route }) => {
           </TouchableOpacity>
           {isMasterPlayer ? (
             <Button title="Apply Player" onPress={() => handleApplyPlayer(item)} disabled={isApplying}/>
-          ) : (
-            <>
+          ) :
+          (
+            <View style={[styles.markButtonContainer, {flexDirection: 'row', alignItems: 'center'}]}>
               <Button
                 title={isProcessing ? "Processing..." : "Mark as Paid"}
                 onPress={() => handlePaymentStatusChange(item)}
                 disabled={item.payment_status === "paid" || isProcessing}
                 color={item.payment_status === "paid" ? "green" : "orange"}
               />
-            </>
+          {item.status_info !== "leave" && (
+            <Button
+              title={isProcessing ? "Processing..." : "Mark as Leave"}
+              onPress={() => handleLeavePlayer(item)}
+              disabled={item.status_info === "leave" || isProcessing}
+              color={item.status_info === "leave" ? "grey" : "red"}
+            />
+          )}
+            </View>
           )}
         </View>
       </View>
@@ -507,6 +616,47 @@ const PlayerListScreen = ({ navigation, route }) => {
         <Text style={styles.buttonText}>CREATE PLAYER</Text>
       </TouchableOpacity>
 
+      {/* Tombol Modal untuk Mark as Paid*/}
+      <Modal
+        visible={isModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setIsModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+                <Text style={styles.modalTitle}>Mark as Paid Player</Text>
+                  <Text style={styles.labelModal}>Nominal</Text>
+                  <TextInput
+                    style={styles.textInputModal}
+                    value={nominal.toString()}
+                    onChangeText={(text) => setNominal(text)}
+                    placeholder={eventHtmNonMember.toString()}
+                    keyboardType="numeric"
+                  />
+                  <View style={[styles.modalButtonContainer, {columnGap: 5}]}>
+                    <TouchableOpacity
+                      style={[styles.buttonModal, {backgroundColor: '#d9534f'}]}
+                      onPress={ () => {
+                        handleModalCancel();
+                        setNominal(eventHtmNonMember);
+                        setPlayerPaidModal(null);
+                      }}
+                    >
+                      <Text style={styles.buttonText}>Cancel</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.buttonModal, {backgroundColor: '#007BFF'}]}
+                      onPress={ () => handleModalPaymentStatusChange()}
+                    >
+
+                      <Text style={styles.buttonTextModal}>Mark as Paid</Text>
+                    </TouchableOpacity>
+                  </View>
+            </View>
+        </View>
+      </Modal>
+
       <FlatList
         data={filteredPlayers}
         renderItem={renderItem}
@@ -622,6 +772,7 @@ const styles = StyleSheet.create({
   buttonText: {
     color: '#fff',
     fontWeight: 'bold',
+    textAlign: 'center',
   },
   expandButton: {
     backgroundColor: '#d3d3d3',
@@ -674,6 +825,34 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginTop: 16,
   },
+  buttonModal: {
+      flex: 1,
+      paddingVertical: 12,
+      paddingHorizontal: 20,
+      borderRadius: 5,
+      alignItems: 'center',
+  },
+  buttonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  buttonTextModal: {
+      color: '#fff',
+      fontWeight: 'bold',
+  },
+  textInputModal: {
+      height: 40,
+      borderColor: '#ccc',
+      borderWidth: 1,
+      borderRadius: 5,
+      paddingHorizontal: 10,
+      marginBottom: 12,
+    },
+  labelModal: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      marginBottom: 5
+  },
   cancelFilterButton: {
     flex: 1,
     backgroundColor: '#d9534f',
@@ -704,6 +883,11 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     fontWeight: 'bold'
+  },
+  playerInfoRow : {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
   },
   textInput: {
     height: 40,

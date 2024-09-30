@@ -16,10 +16,12 @@ import EditMatchScreen from '../screens/Match/EditMatchScreen.js'
 
 import AddPlayerScreen from '../screens/Player/AddPlayerScreen.js'
 
+import {MatchProvider} from '../EventContext.js'
 const Stack = createStackNavigator();
 
 const EventStackNavigator = ({route}) => {
   return (
+  <MatchProvider>
     <Stack.Navigator>
       <Stack.Screen
         name="EventList"
@@ -73,13 +75,15 @@ const EventStackNavigator = ({route}) => {
         component={AddMatchScreen}
         options={{ title: 'Add New Match' }}
       />
+
       <Stack.Screen
         name="AddPlayer"
         component={AddPlayerScreen}
         options={{ title: 'Create Player' }}
       />
-
     </Stack.Navigator>
+   </MatchProvider>
+
   );
 };
 

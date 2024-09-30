@@ -222,6 +222,8 @@ const AddMatchScreen = ({ navigation, route }) => {
         setMatchUpdated(true);
         Alert.alert('Success', 'Match added successfully.');
         navigation.navigate("MatchList", {refresh: true});
+        setSubmitted(false)
+
       } else {
         Alert.alert('Error', result.message || 'Failed to add match.');
       }
