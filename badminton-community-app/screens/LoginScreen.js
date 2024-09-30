@@ -1,6 +1,6 @@
 // screens/LoginScreen.js
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Alert, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, Button, StyleSheet, Alert, TouchableOpacity, Linking } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import {Ionicons} from '@expo/vector-icons';
 
@@ -52,7 +52,7 @@ const LoginScreen = ({ navigation }) => {
 
   return (
       <View style={styles.container}>
-        <Text style={styles.title}>Login</Text>
+        <Text style={styles.title}>Welcome to Badminton Community App</Text>
         <TextInput
           style={styles.input}
           placeholder="Username"
@@ -76,6 +76,18 @@ const LoginScreen = ({ navigation }) => {
           </TouchableOpacity>
         </View>
         <Button title={loading ? 'Logging in...' : 'Login'} onPress={handleLogin} disabled={loading} />
+
+        <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 16 }}>
+          <Text>Don't have an account? </Text>
+          <TouchableOpacity
+            onPress={() => Linking.openURL('https://mabar.scriptsweet.my.id/trial')}
+          >
+            <Text style={{ color: 'blue', textDecorationLine: 'underline' }}>
+              Register here
+            </Text>
+          </TouchableOpacity>
+        </View>
+
       </View>
     );
 };
