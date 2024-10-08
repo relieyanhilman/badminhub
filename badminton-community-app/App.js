@@ -1,9 +1,10 @@
 // App.js
 
 import 'react-native-gesture-handler';
+import SplashScreen from 'react-native-splash-screen'
 import React from 'react';
 import { EventProvider } from './EventContext';
-import { StatusBar } from 'react-native';
+import { StatusBar} from 'react-native';
 import { gestureHandlerRootHOC } from 'react-native-gesture-handler';
 import AppNavigator from './navigation/AppNavigator';
 
