@@ -1,0 +1,31 @@
+{
+  "expo": {
+    "name": "badminton-community-app",
+    "slug": "badminton-community-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/logo_pb_bedahulu.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/images/logo_pb_bedahulu.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/logo_pb_bedahulu.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.relieyanhilman.badmintoncommunityapp"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-secure-store"
+    ]
+  }
+}
