@@ -1,8 +1,12 @@
 // screens/LoginScreen.js
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Alert, TouchableOpacity, Linking } from 'react-native';
+import { View, Text, TextInput, Button, StyleSheet, Alert, TouchableOpacity, Linking, Image, Dimensions } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import {Ionicons} from '@expo/vector-icons';
+
+//Mendapatkan lebar layar perangkat
+const { width, height } = Dimensions.get('window');
+
 
 const LoginScreen = ({ navigation }) => {
   const [username, setUsername] = useState('');
@@ -27,10 +31,6 @@ const LoginScreen = ({ navigation }) => {
 
       const data = await response.json();
       if (response.ok && data.success) {
-        // Simpan token atau data pengguna jika diperlukan
-
-        //dataToPass digunakan nanti kedepannya jika skala aplikasi sudah besar dan terdapat lebih dari satu komunitas
-//        const dataToPass = data["data"]["community_id"]
         await SecureStore.setItemAsync('userToken', data["data"]["token"]);
         navigation.replace('Main');
       } else {
@@ -52,40 +52,45 @@ const LoginScreen = ({ navigation }) => {
 
   return (
       <View style={styles.container}>
-        <Text style={styles.title}>Welcome to Badminton Community App</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Username"
-          value={username}
-          onChangeText={setUsername}
-        />
-        <View style={styles.passwordContainer}>
-          <TextInput
-            style={styles.passwordInput}
-            placeholder="Password"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry={!isPasswordVisible}
-          />
-          <TouchableOpacity onPress={togglePasswordVisibility}>
-            <Ionicons
-              name={isPasswordVisible ? 'eye-off' : 'eye'}
-              size={24}
-              color="gray"
-            />
-          </TouchableOpacity>
+        <View>
+            <Image source={require('../assets/images/logo_pb_bedahulu.png')} style={styles.logo} />
         </View>
-        <Button title={loading ? 'Logging in...' : 'Login'} onPress={handleLogin} disabled={loading} />
+        <View>
+            <Text style={styles.title}>Welcome to BadminHub!</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Username"
+              value={username}
+              onChangeText={setUsername}
+            />
+            <View style={styles.passwordContainer}>
+              <TextInput
+                style={styles.passwordInput}
+                placeholder="Password"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!isPasswordVisible}
+              />
+              <TouchableOpacity onPress={togglePasswordVisibility}>
+                <Ionicons
+                  name={isPasswordVisible ? 'eye-off' : 'eye'}
+                  size={24}
+                  color="gray"
+                />
+              </TouchableOpacity>
+            </View>
+            <Button title={loading ? 'Logging in...' : 'Login'} onPress={handleLogin} disabled={loading} />
 
-        <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 16 }}>
-          <Text>Don't have an account? </Text>
-          <TouchableOpacity
-            onPress={() => Linking.openURL('https://mabar.scriptsweet.my.id/trial')}
-          >
-            <Text style={{ color: 'blue', textDecorationLine: 'underline' }}>
-              Register here
-            </Text>
-          </TouchableOpacity>
+            <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 16 }}>
+              <Text>Don't have an account? </Text>
+              <TouchableOpacity
+                onPress={() => Linking.openURL('https://badminhub.scriptsweet.my.id/trial')}
+              >
+                <Text style={{ color: 'blue', textDecorationLine: 'underline' }}>
+                  Register here
+                </Text>
+              </TouchableOpacity>
+            </View>
         </View>
 
       </View>
@@ -95,13 +100,20 @@ const LoginScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    padding: 16,
+    flexDirection: 'column',
+    justifyContent: 'flex-start',
+    paddingHorizontal: 16,
     backgroundColor: '#f2f2f2',
+    marginTop: height * 0.06
+  },
+  logo: {
+    height: width * 0.8, // Lebar logo
+    resizeMode: 'contain', // Agar logo sesuai dengan ukuran
+    alignSelf: 'center', // Untuk memposisikan di tengah
   },
   title: {
     fontSize: 28,
-    marginBottom: 32,
+    marginBottom: 20,
     textAlign: 'center',
     fontWeight: 'bold',
     color: '#333',
