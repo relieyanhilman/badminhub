@@ -1,3 +1,3 @@
-# bedahulu-badminton-sport
-Aplikasi pengelolaan event badminton
+# BadminHub
+Badminton Event Management App
 
