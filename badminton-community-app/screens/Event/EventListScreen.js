@@ -306,6 +306,7 @@ const styles = StyleSheet.create({
   itemButtons: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
+    columnGap: 5
   },
   cardContent: {
     paddingTop: 10,
