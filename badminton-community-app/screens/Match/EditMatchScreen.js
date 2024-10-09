@@ -63,7 +63,7 @@ const EditMatchScreen = ({ route, navigation }) => {
 
   const [startTime, setStartTime] = useState(new Date(`2024-01-01T${match.start_time}`));
   const [score, setScore] = useState(match.score || '');
-  const [shuttlecockUsed, setShuttlecockUsed] = useState(match.shuttlecock_used?.toString() || 0);
+  const [shuttlecockUsed, setShuttlecockUsed] = useState(match.shuttlecock_used || 0);
   const [note, setNote] = useState(match.note || '');
   const [showStartTimePicker, setShowStartTimePicker] = useState(false);
 
@@ -267,6 +267,26 @@ const EditMatchScreen = ({ route, navigation }) => {
     [attendees]
   );
 
+  //fungsi untuk menambahkan dan mengurangi nilai shuttlecock_used
+  const incrementShuttlecock = () => {
+    setShuttlecockUsed(prevCount => {
+        console.log("BEFORE", typeof prevCount)
+        if (typeof prevCount !== 'number') {
+            parseInt(prevCount, 10)
+        }
+        return prevCount + 1
+        console.log("AFTER", prevCount)
+
+    });
+  };
+
+  const decrementShuttlecock = () => {
+    setShuttlecockUsed(prevCount => {
+        parseInt(prevCount, 10)
+        return prevCount > 0 ? prevCount - 1 : 0
+    });
+  };
+
   if (loading || courtLoading) {
     return (
       <View style={styles.loadingContainer}>
@@ -440,14 +460,18 @@ const EditMatchScreen = ({ route, navigation }) => {
           placeholder="Enter Score (optional)"
         />
 
-        <Text style={styles.label}>Shuttlecocks Used</Text>
-        <TextInput
-          style={styles.input}
-          value={shuttlecockUsed}
-          onChangeText={setShuttlecockUsed}
-          keyboardType="numeric"
-          placeholder="Enter Shuttlecocks Used (optional)"
-        />
+        <View style={styles.containerShuttlecockUsed}>
+          <Text style={styles.label}>Shuttlecocks Used</Text>
+          <View style={styles.counterContainer}>
+            <TouchableOpacity style={styles.buttonShuttlecock} onPress={decrementShuttlecock}>
+              <Text style={styles.buttonTextShuttlecock}>-</Text>
+            </TouchableOpacity>
+            <Text style={styles.counterValueShuttlecock}>{shuttlecockUsed}</Text>
+            <TouchableOpacity style={styles.buttonShuttlecock} onPress={incrementShuttlecock}>
+              <Text style={styles.buttonTextShuttlecock}>+</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
 
         <Text style={styles.label}>Note</Text>
         <TextInput
@@ -530,6 +554,29 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     alignItems: 'center',
   },
+  containerShuttlecockUsed:{
+      alignItems: 'center',
+  },
+  counterContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+  },
+  buttonShuttlecock: {
+      backgroundColor: '#555555',
+      padding: 10,
+      borderRadius: 5,
+      marginHorizontal: 10,
+  },
+  buttonTextShuttlecock: {
+      color: 'white',
+      fontSize: 20,
+      fontWeight: 'bold',
+  },
+  counterValueShuttlecock: {
+      fontSize: 18,
+      width: 40,
+      textAlign: 'center',
+  }
 });
 
 export default EditMatchScreen;

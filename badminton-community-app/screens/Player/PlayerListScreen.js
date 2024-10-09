@@ -467,13 +467,13 @@ const PlayerListScreen = ({ navigation, route }) => {
         )}
         <View style={styles.itemButtons}>
           <TouchableOpacity style={styles.expandButton} onPress={() => toggleExpand(item.id)}>
-            <Text style={styles.buttonText}>{isExpanded ? 'Hide Details' : 'Show Details'}</Text>
+            <Text style={[styles.buttonText, {textAlign: 'center', fontSize: 12}]}>{isExpanded ? 'Hide Details' : 'Show Details'}</Text>
           </TouchableOpacity>
           {isMasterPlayer ? (
             <Button title="Apply Player" onPress={() => handleApplyPlayer(item)} disabled={isApplying}/>
           ) :
           (
-            <View style={[styles.markButtonContainer, {flexDirection: 'row', alignItems: 'center'}]}>
+            <View style={[styles.markButtonContainer, {flexDirection: 'row', alignItems: 'center', columnGap: 5}]}>
               <Button
                 title={isProcessing ? "Processing..." : "Mark as Paid"}
                 onPress={() => handlePaymentStatusChange(item)}
@@ -780,6 +780,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 8,
+    padding: 3
   },
   filterContainer: {
     marginBottom: 16,

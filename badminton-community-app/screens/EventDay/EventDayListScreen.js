@@ -231,7 +231,8 @@ const EventDayListScreen = ({ navigation, route }) => {
   return (
     <View style={styles.itemContainer}>
 
-        <View style={styles.dateNoteEdit}>
+        <View style={[styles.dateNoteEdit, {columnGap: 30}]}>
+            <View style={{flex: 6, flexDirection: 'column'}}>
              <TouchableOpacity onPress={() => handleEventDayPress(item)}>
 
                 <View style={{flexDirection: 'row'}}>
@@ -239,9 +240,9 @@ const EventDayListScreen = ({ navigation, route }) => {
                     <Text style={styles.text}>{formatDate(item.date)}</Text>
                 </View>
 
-                <View style={{flexDirection: 'row'}}>
+                <View style={{flexDirection: 'row', flexWrap: 'wrap'}}>
                     <Text style={[styles.text, {fontWeight: 'bold'}]}>Note: </Text>
-                    <Text style={styles.text}>{item.note}</Text>
+                    <Text style={[styles.text]}>{item.note}</Text>
                 </View>
 
                 { item.shuttlecock_provided !== null ? (<View style={{flexDirection: 'row'}}>
@@ -249,17 +250,18 @@ const EventDayListScreen = ({ navigation, route }) => {
                     <Text style={styles.text}>{item.shuttlecock_provided} </Text>
                     </View>) : null}
 
-
-
              </TouchableOpacity>
-            <View>
+            </View>
+
+            <View style={{flex: 4}}>
                  <TouchableOpacity style={styles.button} onPress={() => handleEditPress(item)}>
-                    <Text style={[styles.text, {color: 'white'}]}>Edit</Text>
+                    <Text style={[styles.text, {color: 'white', fontSize: 16}]}>Edit</Text>
                  </TouchableOpacity>
                  <TouchableOpacity style={[styles.button, {backgroundColor: "red"}]} onPress={() => handleEndSession(item)}>
-                    <Text style={[styles.text, {color: 'white'}]}>End Session</Text>
+                    <Text style={[styles.text, {color: 'white', fontSize: 16}]}>End Session</Text>
                  </TouchableOpacity>
              </View>
+
          </View>
 
        <TouchableOpacity style={styles.recapIconTouchable} onPress={() => handleToggleExpand(item.id, isRecapGenerated)}>
@@ -420,7 +422,8 @@ const styles = StyleSheet.create({
   },
   button: {
     backgroundColor: '#555555',
-    padding: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 0,
     marginVertical: 4,
     borderRadius: 2,
     alignItems: 'center',

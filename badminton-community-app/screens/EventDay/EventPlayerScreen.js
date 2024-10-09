@@ -268,12 +268,56 @@ const EventPlayerScreen = ({ route, navigation }) => {
     return (
         <View style={styles.itemContainer}>
           <Text style={styles.nameText}>{item.player.name} ({item.player.alias})</Text>
-          <Text style={styles.text}>Level: {item.player.level}</Text>
-          <Text style={styles.text}>Gender: {item.player.gender}</Text>
-          <Text style={styles.text}>Age Range: {item.player.age_range}</Text>
-          <Text style={styles.text}>Contact: {item.player.contact}</Text>
-          <Text style={styles.text}>Status: {item.status}</Text>
-          {item.note && <Text style={styles.text}>Note: {item.note}</Text>}
+           <View style={{flexDirection: 'row', justifyContent: 'space-between'}}>
+             <View>
+              <Text style={styles.text}>Level: {item.player.level}</Text>
+              <Text style={styles.text}>Gender: {item.player.gender}</Text>
+              <Text style={styles.text}>Age Range: {item.player.age_range}</Text>
+              <Text style={styles.text}>Contact: {item.player.contact}</Text>
+              <Text style={styles.text}>Status: {item.status}</Text>
+              {item.note && <Text style={styles.text}>Note: {item.note}</Text>}
+              {item.status === 'member' ? (
+                <TouchableOpacity style={styles.toggleButton} onPress={() => toggleExpand(item.id)}>
+                  <Text style={styles.toggleButtonText}>{isExpanded ? 'Hide Detail Membership' : 'Show Detail Membership'}</Text>
+                </TouchableOpacity>
+              ) : (<></>)
+              }
+             </View>
+
+              <View style={styles.buttonColumn}>
+               <TouchableOpacity style={[styles.button, isProcessing === item.id && styles.buttonDisabled, styles.buttonEdit]}
+               onPress={() => handleEdit(item.player)}
+               disabled={isProcessing === item.id}
+               >
+                 <Text style={styles.buttonText}>Edit</Text>
+               </TouchableOpacity>
+
+               {item.status === 'non member' ? (
+                 <TouchableOpacity style={[styles.button, isProcessing === item.id && styles.buttonDisabled, styles.buttonSubscribe]}
+                 onPress={() => handleSubResub(item, 'sub')}
+                 disabled={isProcessing === item.id}
+                 >
+                   <Text style={styles.buttonText}>Subscribe</Text>
+                 </TouchableOpacity>
+               ) : (
+                 <>
+                   <TouchableOpacity style={[styles.button, isProcessing === item.id && styles.buttonDisabled, styles.buttonResubscribe]}
+                   onPress={() => handleSubResub(item, 'resub')}
+                   disabled={isProcessing === item.id}
+                   >
+                     <Text style={styles.buttonText}>Resubscribe</Text>
+                   </TouchableOpacity>
+
+                   <TouchableOpacity style={[styles.button, isProcessing === item.id && styles.buttonDisabled, styles.buttonUnsubscribe]}
+                   onPress={() => handleUnsubscribe(item)}
+                   disabled={isProcessing === item.id}
+                   >
+                     <Text style={styles.buttonText}>Unsubscribe</Text>
+                   </TouchableOpacity>
+                 </>
+               )}
+               </View>
+             </View>
 
           {isExpanded ? (
             <View style={styles.expandedContainer}>
@@ -284,47 +328,8 @@ const EventPlayerScreen = ({ route, navigation }) => {
                 </View>
           ) : (<></>)}
 
-          {item.status === 'member' ? (
-              <TouchableOpacity style={styles.toggleButton} onPress={() => toggleExpand(item.id)}>
-                <Text style={styles.toggleButtonText}>{isExpanded ? 'Hide Detail Membership' : 'Show Detail Membership'}</Text>
-              </TouchableOpacity>
-          ) : (<></>)
-          }
 
 
-          <View style={styles.buttonRow}>
-          <TouchableOpacity style={[styles.button, isProcessing === item.id && styles.buttonDisabled, styles.buttonEdit]}
-          onPress={() => handleEdit(item.player)}
-          disabled={isProcessing === item.id}
-          >
-            <Text style={styles.buttonText}>Edit</Text>
-          </TouchableOpacity>
-
-          {item.status === 'non member' ? (
-            <TouchableOpacity style={[styles.button, isProcessing === item.id && styles.buttonDisabled, styles.buttonSubscribe]}
-            onPress={() => handleSubResub(item, 'sub')}
-            disabled={isProcessing === item.id}
-            >
-              <Text style={styles.buttonText}>Subscribe</Text>
-            </TouchableOpacity>
-          ) : (
-            <>
-              <TouchableOpacity style={[styles.button, isProcessing === item.id && styles.buttonDisabled, styles.buttonResubscribe]}
-              onPress={() => handleSubResub(item, 'resub')}
-              disabled={isProcessing === item.id}
-              >
-                <Text style={styles.buttonText}>Resubscribe</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity style={[styles.button, isProcessing === item.id && styles.buttonDisabled, styles.buttonUnsubscribe]}
-              onPress={() => handleUnsubscribe(item)}
-              disabled={isProcessing === item.id}
-              >
-                <Text style={styles.buttonText}>Unsubscribe</Text>
-              </TouchableOpacity>
-            </>
-          )}
-          </View>
         </View>
   );}
 
@@ -645,8 +650,8 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     color: '#555',
   },
-  buttonRow: {
-    flexDirection: 'row',
+  buttonColumn: {
+    flexDirection: 'column',
     justifyContent: 'space-between', // This can be changed to 'center' if you want the buttons to be centered
     marginTop: 8,
   },
